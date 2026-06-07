@@ -1558,19 +1558,48 @@ function showComparison() {
   heatHtml += '</tbody></table>';
   heatmap.innerHTML = heatHtml;
 
-  // ── Table ──
-  const tbody = document.getElementById("comparison-tbody");
-  tbody.innerHTML = models.map(([name, data]) => `
-    <tr>
-      <td>${name}</td>
-      <td>${data.forge_score.toFixed(4)}</td>
-      <td>${(data.interpolation_score || 0).toFixed(4)}</td>
-      <td>${(data.extrapolation_score || 0).toFixed(4)}</td>
-      <td>${data.cliff_index ? "Tier " + data.cliff_index : "—"}</td>
-      <td>$${(data.cost || 0).toFixed(2)}</td>
-      <td>${data.elapsed ? data.elapsed.toFixed(0) + 's' : '—'}</td>
-    </tr>
-  `).join("");
+  // ── Sortable Table ──
+  let sortCol = "forge", sortAsc = false;
+  const sortKeys = {
+    model: ([n]) => n.toLowerCase(),
+    forge: ([,d]) => d.forge_score,
+    interp: ([,d]) => d.interpolation_score || 0,
+    extra: ([,d]) => d.extrapolation_score || 0,
+    cliff: ([,d]) => d.cliff_index || 0,
+    cost: ([,d]) => d.cost || 0,
+    time: ([,d]) => d.elapsed || 0,
+  };
+
+  function renderComparisonTable() {
+    const sorted = [...models].sort((a, b) => {
+      const va = (sortKeys[sortCol] || sortKeys.forge)(a);
+      const vb = (sortKeys[sortCol] || sortKeys.forge)(b);
+      if (typeof va === "string") return sortAsc ? va.localeCompare(vb) : vb.localeCompare(va);
+      return sortAsc ? va - vb : vb - va;
+    });
+    const tbody = document.getElementById("comparison-tbody");
+    tbody.innerHTML = sorted.map(([name, data]) => `
+      <tr>
+        <td>${name}</td>
+        <td>${data.forge_score.toFixed(4)}</td>
+        <td>${(data.interpolation_score || 0).toFixed(4)}</td>
+        <td>${(data.extrapolation_score || 0).toFixed(4)}</td>
+        <td>${data.cliff_index ? "Tier " + data.cliff_index : "—"}</td>
+        <td>$${(data.cost || 0).toFixed(2)}</td>
+        <td>${data.elapsed ? data.elapsed.toFixed(0) + 's' : '—'}</td>
+      </tr>
+    `).join("");
+  }
+  renderComparisonTable();
+
+  document.querySelectorAll("#comparison-table thead th[data-sort]").forEach(th => {
+    th.addEventListener("click", () => {
+      const col = th.dataset.sort;
+      if (sortCol === col) sortAsc = !sortAsc;
+      else { sortCol = col; sortAsc = col === "model"; }
+      renderComparisonTable();
+    });
+  });
 }
 
 // ─── Snapshots ───
