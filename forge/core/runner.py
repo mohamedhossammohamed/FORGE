@@ -349,7 +349,14 @@ class ForgeRunner:
             if 'ANSWER:' in line:
                 answer = line.split('ANSWER:', 1)[1].strip()
                 if answer:
-                    return answer
+                    # Clean up LaTeX artifacts
+                    import re as _re
+                    answer = _re.sub(r'^[}\s\\]+', '', answer)  # Remove leading }, \, whitespace
+                    answer = _re.sub(r'[}\s\\]+$', '', answer)  # Remove trailing }, \, whitespace
+                    answer = _re.sub(r'\\[a-zA-Z]+\{([^}]*)\}', r'\1', answer)  # \cmd{x} -> x
+                    answer = answer.strip()
+                    if answer:
+                        return answer
         
         # Fall back to last non-empty line
         for line in reversed(lines):

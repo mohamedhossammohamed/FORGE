@@ -51,7 +51,6 @@ class ArithmeticChainCategory(ForgeCategory):
         
         # Generate chain
         steps = [(value, None)]
-        current = value
         
         for i in range(n_steps):
             op = operations[rng.integers(0, len(operations))]
@@ -71,31 +70,8 @@ class ArithmeticChainCategory(ForgeCategory):
                 operand = Fraction(rng.integers(2, 4))  # Keep exponents small
             
             steps.append((operand, op))
-            
-            # Compute result
-            if op in ("+", "plus"):
-                current = current + operand
-            elif op in ("-", "minus"):
-                current = current - operand
-            elif op in ("*", "times"):
-                current = current * operand
-            elif op in ("//", "/"):
-                current = current / operand
-            elif op == "**":
-                if current.denominator == 1 and operand.denominator == 1:
-                    current = current ** int(operand)
-                else:
-                    # Recalculate without exponent if fractional
-                    current = current * operand  # Fallback to multiplication
-                    steps[-1] = (operand, "*")
-            elif op == "%":
-                if current.denominator == 1 and operand.denominator == 1:
-                    current = Fraction(int(current) % int(operand))
-                else:
-                    current = current + operand
-                    steps[-1] = (operand, "+")
         
-        # Format question
+        # Format question with standard math notation
         op_symbols = {
             "+": "+", "-": "-", "*": "*", "//": "÷", "/": "/", "**": "^", "%": "mod"
         }
@@ -116,6 +92,20 @@ class ArithmeticChainCategory(ForgeCategory):
         
         expression = "".join(parts)
         
+        # Evaluate expression with standard operator precedence (PEMDAS)
+        # Build a Python-evaluable expression
+        py_ops = {"+": "+", "-": "-", "*": "*", "//": "//", "/": "/", "**": "**", "%": "%"}
+        py_parts = []
+        for val, op in steps:
+            if op is None:
+                py_parts.append(f"Fraction({val.numerator},{val.denominator})")
+            else:
+                py_sym = py_ops.get(op, op)
+                py_parts.append(f" {py_sym} Fraction({val.numerator},{val.denominator})")
+        py_expr = "".join(py_parts)
+        
+        answer = eval(py_expr, {"Fraction": Fraction})
+        
         question = (
             f"Compute the following arithmetic expression. "
             f"Provide your answer as an exact fraction if it's not an integer.\n\n"
@@ -123,10 +113,10 @@ class ArithmeticChainCategory(ForgeCategory):
         )
         
         # Format answer
-        if current.denominator == 1:
-            answer = int(current)
+        if answer.denominator == 1:
+            answer = int(answer)
         else:
-            answer = str(current)
+            answer = str(answer)
         
         return Problem(
             question=question,
