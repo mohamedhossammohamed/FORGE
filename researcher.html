@@ -1116,13 +1116,7 @@ async function runSingle() {
     currentResult = { ...result, config, timestamp: new Date().toISOString() };
     showResults(currentResult);
 
-    // Auto-save to localStorage
-    const snapshots = getSnapshots();
-    snapshots.push(currentResult);
-    localStorage.setItem("forge_snapshots", JSON.stringify(snapshots));
-    loadSnapshots();
-    document.getElementById("btn-save-snapshot").textContent = "Auto-saved ✓";
-    setTimeout(() => document.getElementById("btn-save-snapshot").textContent = "Save snapshot", 3000);
+    document.getElementById("btn-save-snapshot").textContent = "Save snapshot";
   } catch (err) {
     if (err.name !== "AbortError") {
       addFeedItem("error", 0, false, err.message, 0);
@@ -1761,6 +1755,12 @@ function saveSnapshot() {
   const btn = document.getElementById("btn-save-snapshot");
   btn.textContent = "Saved ✓";
   setTimeout(() => btn.textContent = "Save snapshot", 1500);
+
+  // Switch to Snapshots tab so user can see the saved result
+  document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
+  document.querySelectorAll(".tab-panel").forEach(p => p.classList.remove("active"));
+  document.querySelector('[data-tab="snapshots"]').classList.add("active");
+  document.getElementById("tab-snapshots").classList.add("active");
 }
 
 function exportAllSnapshots() {
