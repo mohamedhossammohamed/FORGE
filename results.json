@@ -1,0 +1,375 @@
+{
+  "forge_version": "0.1.0",
+  "timestamp": "2026-06-07T03:59:53Z",
+  "run_config": {
+    "mode": "nano",
+    "seed": 42,
+    "questions_per_category": 1,
+    "difficulty_distribution": {
+      "3": 1
+    }
+  },
+  "model": {
+    "name": "mistralai/ministral-3b-2512",
+    "api_base": "https://openrouter.ai/api/v1"
+  },
+  "scores": {
+    "forge_score": 0.08,
+    "interpolation_score": 0.0,
+    "extrapolation_score": 0.08,
+    "cliff_index": null
+  },
+  "categories": [
+    {
+      "name": "arithmetic_chain",
+      "display_name": "Arithmetic Chain Composition",
+      "score": 0.0,
+      "correct": 0,
+      "total": 1,
+      "cliff_index": null,
+      "accuracy_by_difficulty": {
+        "3": {
+          "correct": 0,
+          "total": 1
+        }
+      }
+    },
+    {
+      "name": "mod_exp",
+      "display_name": "Modular Exponentiation",
+      "score": 0.0,
+      "correct": 0,
+      "total": 1,
+      "cliff_index": null,
+      "accuracy_by_difficulty": {
+        "3": {
+          "correct": 0,
+          "total": 1
+        }
+      }
+    },
+    {
+      "name": "combinatorics_stars",
+      "display_name": "Combinatorics: Stars and Bars",
+      "score": 0.0,
+      "correct": 0,
+      "total": 1,
+      "cliff_index": null,
+      "accuracy_by_difficulty": {
+        "3": {
+          "correct": 0,
+          "total": 1
+        }
+      }
+    },
+    {
+      "name": "game_nim",
+      "display_name": "Game Theory: Nim States",
+      "score": 0.0,
+      "correct": 0,
+      "total": 1,
+      "cliff_index": null,
+      "accuracy_by_difficulty": {
+        "3": {
+          "correct": 0,
+          "total": 1
+        }
+      }
+    },
+    {
+      "name": "info_entropy",
+      "display_name": "Information Theory: Entropy",
+      "score": 0.0,
+      "correct": 0,
+      "total": 1,
+      "cliff_index": null,
+      "accuracy_by_difficulty": {
+        "3": {
+          "correct": 0,
+          "total": 1
+        }
+      }
+    },
+    {
+      "name": "matrix_det",
+      "display_name": "Matrix Determinants",
+      "score": 0.0,
+      "correct": 0,
+      "total": 1,
+      "cliff_index": null,
+      "accuracy_by_difficulty": {
+        "3": {
+          "correct": 0,
+          "total": 1
+        }
+      }
+    },
+    {
+      "name": "linear_systems",
+      "display_name": "Systems of Linear Equations",
+      "score": 0.0,
+      "correct": 0,
+      "total": 1,
+      "cliff_index": null,
+      "accuracy_by_difficulty": {
+        "3": {
+          "correct": 0,
+          "total": 1
+        }
+      }
+    },
+    {
+      "name": "jordan_normal",
+      "display_name": "Jordan Normal Form",
+      "score": 0.0,
+      "correct": 0,
+      "total": 1,
+      "cliff_index": null,
+      "accuracy_by_difficulty": {
+        "3": {
+          "correct": 0,
+          "total": 1
+        }
+      }
+    },
+    {
+      "name": "vector_div",
+      "display_name": "Vector Calculus: Divergence",
+      "score": 0.0,
+      "correct": 0,
+      "total": 1,
+      "cliff_index": null,
+      "accuracy_by_difficulty": {
+        "3": {
+          "correct": 0,
+          "total": 1
+        }
+      }
+    },
+    {
+      "name": "polynomial_roots",
+      "display_name": "Polynomial Root Finding",
+      "score": 0.0,
+      "correct": 0,
+      "total": 1,
+      "cliff_index": null,
+      "accuracy_by_difficulty": {
+        "3": {
+          "correct": 0,
+          "total": 1
+        }
+      }
+    },
+    {
+      "name": "algebra_groups",
+      "display_name": "Abstract Algebra: Group Orders",
+      "score": 1.0,
+      "correct": 1,
+      "total": 1,
+      "cliff_index": null,
+      "accuracy_by_difficulty": {
+        "3": {
+          "correct": 1,
+          "total": 1
+        }
+      }
+    },
+    {
+      "name": "diophantine",
+      "display_name": "Diophantine Equations",
+      "score": 0.0,
+      "correct": 0,
+      "total": 1,
+      "cliff_index": null,
+      "accuracy_by_difficulty": {
+        "3": {
+          "correct": 0,
+          "total": 1
+        }
+      }
+    },
+    {
+      "name": "crypto_rsa",
+      "display_name": "Cryptographic Arithmetic (RSA)",
+      "score": 0.0,
+      "correct": 0,
+      "total": 1,
+      "cliff_index": null,
+      "accuracy_by_difficulty": {
+        "3": {
+          "correct": 0,
+          "total": 1
+        }
+      }
+    },
+    {
+      "name": "taylor_series",
+      "display_name": "Taylor Series Coefficients",
+      "score": 0.0,
+      "correct": 0,
+      "total": 1,
+      "cliff_index": null,
+      "accuracy_by_difficulty": {
+        "3": {
+          "correct": 0,
+          "total": 1
+        }
+      }
+    },
+    {
+      "name": "diff_eq_rlc",
+      "display_name": "RLC Circuit Differential Equations",
+      "score": 0.0,
+      "correct": 0,
+      "total": 1,
+      "cliff_index": null,
+      "accuracy_by_difficulty": {
+        "3": {
+          "correct": 0,
+          "total": 1
+        }
+      }
+    },
+    {
+      "name": "finance_math",
+      "display_name": "Financial Mathematics",
+      "score": 0.0,
+      "correct": 0,
+      "total": 1,
+      "cliff_index": null,
+      "accuracy_by_difficulty": {
+        "3": {
+          "correct": 0,
+          "total": 1
+        }
+      }
+    },
+    {
+      "name": "prob_bayes",
+      "display_name": "Probability: Bayesian Updating",
+      "score": 0.0,
+      "correct": 0,
+      "total": 1,
+      "cliff_index": null,
+      "accuracy_by_difficulty": {
+        "3": {
+          "correct": 0,
+          "total": 1
+        }
+      }
+    },
+    {
+      "name": "boolean_kmap",
+      "display_name": "Boolean Logic Minimization",
+      "score": 0.0,
+      "correct": 0,
+      "total": 1,
+      "cliff_index": null,
+      "accuracy_by_difficulty": {
+        "3": {
+          "correct": 0,
+          "total": 1
+        }
+      }
+    },
+    {
+      "name": "signal_dft",
+      "display_name": "Signal Processing: DFT",
+      "score": 0.0,
+      "correct": 0,
+      "total": 1,
+      "cliff_index": null,
+      "accuracy_by_difficulty": {
+        "3": {
+          "correct": 0,
+          "total": 1
+        }
+      }
+    },
+    {
+      "name": "geo_polygon",
+      "display_name": "Geometry: Polygon Properties",
+      "score": 0.0,
+      "correct": 0,
+      "total": 1,
+      "cliff_index": null,
+      "accuracy_by_difficulty": {
+        "3": {
+          "correct": 0,
+          "total": 1
+        }
+      }
+    },
+    {
+      "name": "graph_shortest_path",
+      "display_name": "Graph Theory: Shortest Path",
+      "score": 0.0,
+      "correct": 0,
+      "total": 1,
+      "cliff_index": null,
+      "accuracy_by_difficulty": {
+        "3": {
+          "correct": 0,
+          "total": 1
+        }
+      }
+    },
+    {
+      "name": "formal_grammars",
+      "display_name": "Formal Grammars",
+      "score": 1.0,
+      "correct": 1,
+      "total": 1,
+      "cliff_index": null,
+      "accuracy_by_difficulty": {
+        "3": {
+          "correct": 1,
+          "total": 1
+        }
+      }
+    },
+    {
+      "name": "quantum_amplitudes",
+      "display_name": "Quantum State Amplitudes",
+      "score": 0.0,
+      "correct": 0,
+      "total": 1,
+      "cliff_index": null,
+      "accuracy_by_difficulty": {
+        "3": {
+          "correct": 0,
+          "total": 1
+        }
+      }
+    },
+    {
+      "name": "chess_mate",
+      "display_name": "Chess Mate-in-N (Endgame)",
+      "score": 0.0,
+      "correct": 0,
+      "total": 1,
+      "cliff_index": null,
+      "accuracy_by_difficulty": {
+        "3": {
+          "correct": 0,
+          "total": 1
+        }
+      }
+    },
+    {
+      "name": "algorithmic_trace",
+      "display_name": "Algorithmic Trace Execution",
+      "score": 0.0,
+      "correct": 0,
+      "total": 1,
+      "cliff_index": null,
+      "accuracy_by_difficulty": {
+        "3": {
+          "correct": 0,
+          "total": 1
+        }
+      }
+    }
+  ],
+  "runtime_seconds": 299.42771196365356
+}
