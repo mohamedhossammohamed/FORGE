@@ -9,14 +9,14 @@
 <meta name="twitter:site" content="@MohamedHz72007">
 <meta name="twitter:creator" content="@MohamedHz72007">
 <meta name="twitter:title" content="FORGE — Formally Generated Reasoning Evaluation">
-<meta name="twitter:description" content="A procedurally generated benchmark testing whether LLMs possess internal world-models or just interpolate training data. The first benchmark with a built-in longitudinal audit trail.">
+<meta name="twitter:description" content="A procedurally generated benchmark for investigating whether LLMs generalize or interpolate. Open source, computationally graded, seed-reproducible.">
 <meta name="twitter:image" content="https://mohamedhossammohamed.github.io/FORGE/assets/og-card.png">
-<meta name="twitter:image:alt" content="FORGE — Measuring understanding, not memorization.">
+<meta name="twitter:image:alt" content="FORGE — An open question about LLM evaluation.">
 
 <!-- Open Graph -->
 <meta property="og:type" content="website">
 <meta property="og:title" content="FORGE — Formally Generated Reasoning Evaluation">
-<meta property="og:description" content="A procedurally generated benchmark testing whether LLMs possess internal world-models or just interpolate training data.">
+<meta property="og:description" content="A procedurally generated benchmark for investigating whether LLMs generalize or interpolate. Open source, computationally graded, seed-reproducible.">
 <meta property="og:image" content="https://mohamedhossammohamed.github.io/FORGE/assets/og-card.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
@@ -487,12 +487,12 @@ footer a:hover { color: var(--ink); }
 
 <!-- ─── Hero ─── -->
 <header class="hero page reveal">
-  <div class="hero-label">Open-source benchmark · MIT License</div>
-  <h1>Measuring understanding,<br>not memorization.</h1>
+  <div class="hero-label">Open-source · MIT License · Work in progress</div>
+  <h1>When a model solves a problem<br>it has never seen, is that<br>understanding — or a very good guess?</h1>
   <p class="hero-sub">
-    FORGE is a procedurally generated evaluation instrument that tests whether large
-    language models generalize through internal world-models or succeed via sophisticated
-    interpolation over memorized training data.
+    FORGE is built to find out. It generates every problem at runtime from a seed,
+    grades answers computationally, and produces a reproducible score that anyone
+    can verify or challenge.
   </p>
   <div class="hero-actions">
     <a href="researcher.html" class="btn btn-primary">Run FORGE</a>
@@ -506,40 +506,38 @@ footer a:hover { color: var(--ink); }
 <!-- ─── Hypothesis ─── -->
 <section id="hypothesis" class="page reveal">
   <div class="section-label">01 — The Hypothesis</div>
-  <h2>Do LLMs build internal world-models?</h2>
+  <h2>A contested question, taken seriously.</h2>
 
   <p class="lead">
-    Large language models may be operating with something functionally equivalent to an
-    internal model of reality: a compressed, weighted representation of mathematical
-    structure, physical law, and logical relationship embedded in their weights.
+    Whether large language models do something that resembles reasoning over internalized
+    structure, or succeed primarily through pattern-matching against training data, is not
+    settled. Researchers disagree. The evidence is mixed. FORGE does not resolve this —
+    it tries to produce cleaner evidence than what currently exists.
   </p>
 
   <div class="hypothesis">
     <p>
-      <strong>Core claim:</strong> A model's score on FORGE is evidence—not proof—of how
-      deeply it has internalized mathematical and physical structure, as distinct from how
-      much relevant training data it has seen.
+      <strong>What we hypothesize:</strong> A model's performance profile across difficulty
+      tiers is informative about whether it has internalized mathematical structure or is
+      primarily retrieving from training distribution. We do not claim FORGE scores prove
+      either interpretation.
     </p>
   </div>
 
   <p>
-    This remains a contested scientific claim. Mechanistic interpretability research suggests
-    models develop hierarchically structured understanding during training. But opposing
-    evidence shows that reasoning models suffer catastrophic accuracy collapse—rather than
-    graceful degradation—when pushed slightly beyond their training distribution.
-  </p>
-
-  <p>
-    FORGE does not assert an answer. It produces clean, contamination-free evidence that
-    bears directly on this question.
+    Mechanistic interpretability research suggests models develop structured internal
+    representations during training. But several papers have also documented that model
+    accuracy collapses — rather than degrades gracefully — when pushed slightly beyond
+    training distribution. Both observations are real. FORGE is designed to produce data
+    that bears on which pattern dominates, and at what difficulty level.
   </p>
 
   <div class="hypothesis">
     <p>
-      <strong>Falsifiability:</strong> The hypothesis would be disproven if models scoring
-      highly on maximum difficulty tiers suffer catastrophic degradation when mathematical
-      structure remains identical but semantic framing is inverted—proving reliance on
-      surface-level pattern matching rather than internalized circuits.
+      <strong>Falsifiability:</strong> The hypothesis would be evidence against if models
+      scoring highly on hard tiers suffer catastrophic degradation when mathematical
+      structure is held constant but surface framing is inverted. We have not run this
+      experiment systematically. It is a direction for future work.
     </p>
   </div>
 </section>
@@ -551,8 +549,9 @@ footer a:hover { color: var(--ink); }
 
   <p>
     FORGE generates every problem procedurally from a seed using SHA-256 derived RNGs.
-    No static question bank. No test-set leakage. Same seed produces identical problems
-    every time, on any machine.
+    No static question bank. Same seed produces identical problems every time, on any
+    machine. Verbatim contamination of generated questions is statistically near-impossible;
+    structural similarity to training data cannot be excluded.
   </p>
 
   <div class="metric-row">
@@ -600,11 +599,13 @@ footer a:hover { color: var(--ink); }
     <div class="cat-item"><span class="cat-num">25</span>Algorithmic Trace</div>
   </div>
 
-  <h3>Deterministic grading</h3>
+  <h3>Computational grading</h3>
 
   <p>
-    All evaluation is performed through exact computational verification. Zero LLM judges.
-    Zero subjective bias.
+    All evaluation uses deterministic computational verification rather than LLM judges.
+    The grading logic is inspectable and consistent — the same input always produces the
+    same grade. It is not perfect: SymPy has edge cases, numeric tolerances are judgment
+    calls, and some categories have known failure modes documented in the README.
   </p>
 
   <table class="data-table">
@@ -625,46 +626,47 @@ footer a:hover { color: var(--ink); }
   <h2>The Complexity Cliff Index</h2>
 
   <p>
-    A simple mean accuracy conflates easy interpolation with true world-modeling.
-    FORGE uses a weighted geometric mean that exponentially rewards performance at
-    higher complexity tiers, penalizing models that only succeed at memorizable depths.
+    A simple mean accuracy conflates performance at easy tiers (where training data overlap
+    is likely) with performance at hard tiers (where it is less likely). FORGE weights
+    harder tiers exponentially more, so a model that collapses at difficulty 3 scores
+    differently from one that holds through difficulty 5.
   </p>
 
   <div class="formula-block">
-    C_c = Σ(α<sup>d</sup> · S<sub>c,d</sub>) / Σ(α<sup>d</sup>)&emsp;&emsp;α = 1.5
+    C_c = Σ(α<sup>d</sup> · S<sub>c,d</sub>) / Σ(α<sup>d</sup>)  α = 1.5
   </div>
 
   <p>
-    The <strong>Cliff Index</strong> reports the exact difficulty tier where accuracy drops
-    more than 30% from the previous tier. This is the single most diagnostic number
-    FORGE produces.
+    The <strong>Cliff Index</strong> is the first difficulty tier where accuracy drops more
+    than 30% from the previous tier. It is an observation about where performance degrades,
+    not a proof of what causes the degradation. It is the most diagnostically useful single
+    number FORGE produces.
   </p>
 
   <table class="data-table">
     <thead>
-      <tr><th>Metric</th><th>What it measures</th></tr>
+      <tr><th>Metric</th><th>What it measures</th><th>What it does not prove</th></tr>
     </thead>
     <tbody>
-      <tr><td>FORGE Score</td><td>Weighted accuracy across all categories and tiers</td></tr>
-      <tr><td>Interpolation Score</td><td>Performance on Easy/Medium (likely in training data)</td></tr>
-      <tr><td>Extrapolation Score</td><td>Performance on Hard/Expert (statistically novel)</td></tr>
-      <tr><td>Cliff Index</td><td>First tier where accuracy drops &gt;30%</td></tr>
+      <tr><td>FORGE Score</td><td>Weighted accuracy across all categories and tiers</td><td>That the model has an internal world-model</td></tr>
+      <tr><td>Interpolation Score</td><td>Accuracy on easy/medium tiers</td><td>That these problems were in training data</td></tr>
+      <tr><td>Extrapolation Score</td><td>Accuracy on hard/expert tiers</td><td>That these problems were absent from training data</td></tr>
+      <tr><td>Cliff Index</td><td>First tier where accuracy drops >30%</td><td>The cause of the drop</td></tr>
     </tbody>
   </table>
 
   <div class="hypothesis">
     <p>
-      <strong>Key insight:</strong> A model with high Interpolation but low Extrapolation
-      is likely memorizing. A model maintaining high scores across both zones has evidence
-      of generalized reasoning circuits.
+      A model with high interpolation and low extrapolation scores is consistent with
+      retrieval-dominant behavior. A model that maintains accuracy across tiers is
+      consistent with generalization. Neither interpretation is proven by the score alone.
     </p>
   </div>
 </section>
-
 <!-- ─── Nerfed Model Problem ─── -->
 <section id="nerfed-model" class="page reveal">
   <div class="section-label">04 — The Nerfed Model Problem</div>
-  <h2>The first benchmark with a built-in audit trail.</h2>
+  <h2>Seeded runs are reproducible by anyone.</h2>
 
   <p class="lead">
     AI labs face a quiet incentive problem. A model is released. It scores well on public
@@ -673,41 +675,40 @@ footer a:hover { color: var(--ink); }
   </p>
 
   <p>
-    There is currently no clean way to detect this. Fixed benchmarks cannot distinguish
-    between "the model got smarter" and "the model was tuned toward this specific benchmark
-    distribution."
+    Fixed benchmarks cannot distinguish between "the model got smarter" and "the model was
+    tuned toward this specific benchmark distribution."
   </p>
 
-  <p><strong>FORGE changes this.</strong></p>
+  <p>Because every FORGE run is governed by a published seed and every question is generated deterministically at runtime, a score is reproducible. Anyone can rerun the same seed against the same endpoint months later and compare.</p>
 
   <div class="audit-steps">
     <div class="audit-step">
       <span class="audit-num">1</span>
-      <span class="audit-text">Lab publishes: Model X, Seed 42, FORGE Score 0.847</span>
+      <span class="audit-text">Lab publishes: Model X, Seed 42, FORGE Score 0.847, date 2025-01-15</span>
     </div>
     <div class="audit-step">
       <span class="audit-num">2</span>
-      <span class="audit-text">Timestamp recorded: 2025-01-15</span>
+      <span class="audit-text">Six months later, anyone reruns seed 42 against the same endpoint</span>
     </div>
     <div class="audit-step">
       <span class="audit-num">3</span>
-      <span class="audit-text">Six months later, anyone can run the same seed against the same endpoint</span>
+      <span class="audit-text">If the score has shifted, the shift is documented</span>
     </div>
     <div class="audit-step">
       <span class="audit-num">4</span>
-      <span class="audit-text">If the score has shifted, the shift is real and documented</span>
+      <span class="audit-text">Whether the shift reflects capability change or distribution tuning requires further investigation</span>
     </div>
   </div>
 
   <div class="quote">
-    <p>FORGE does not accuse anyone of nerfing. It simply makes the question answerable for the first time.</p>
+    <p>FORGE does not accuse anyone of nerfing. It makes the question more tractable.</p>
   </div>
 
   <h3>Seed security</h3>
 
   <p>
-    FORGE uses a 256-bit hash space (SHA-256). There are more possible problem sets than
-    atoms in the observable universe. Pre-computation is physically impossible.
+    FORGE uses a 256-bit hash space (SHA-256). The space of possible problem sets is large
+    enough that exhaustive pre-computation is not feasible.
   </p>
 
   <table class="data-table">
@@ -724,21 +725,44 @@ footer a:hover { color: var(--ink); }
 
 <!-- ─── Static benchmarks ─── -->
 <section class="page reveal">
-  <div class="section-label">05 — Why existing benchmarks fail</div>
-  <h2>The contamination-saturation cycle</h2>
+  <div class="section-label">05 — Design decisions</div>
+  <h2>Why each choice was made</h2>
+
+  <p>
+    These are the specific problems FORGE was designed to address, and the tradeoffs
+    involved in each design decision.
+  </p>
 
   <table class="data-table">
     <thead>
-      <tr><th>Benchmark</th><th>Failure mode</th><th>FORGE resolution</th></tr>
+      <tr><th>Problem</th><th>Design decision</th><th>Tradeoff</th></tr>
     </thead>
     <tbody>
-      <tr><td>MMLU</td><td>Static saturation, formatting gaming</td><td>Zero multiple-choice. Every answer derived from scratch.</td></tr>
-      <tr><td>MATH / GSM8K</td><td>Data contamination, memorization</td><td>100% procedural. Near-zero collision probability.</td></tr>
-      <tr><td>FrontierMath</td><td>Unscalable human bottleneck</td><td>Parametric difficulty via mathematical parameters.</td></tr>
-      <tr><td>AIME / Olympiad</td><td>LLM-as-judge bias, hallucinated grading</td><td>Deterministic SymPy/NumPy grading. Zero LLM judges.</td></tr>
-      <tr><td>HumanEval</td><td>Memorized boilerplate algorithms</td><td>Traces non-standard procedural algorithms.</td></tr>
+      <tr><td>Static question banks contaminate pre-training</td><td>Procedural generation from seed at runtime</td><td>Structural similarity to training data cannot be excluded</td></tr>
+      <tr><td>Multiple-choice formats are gameable</td><td>Free-form answers graded computationally</td><td>Prompt sensitivity affects scores; format non-compliance penalizes correct answers</td></tr>
+      <tr><td>LLM judges introduce hallucination and inconsistency</td><td>SymPy, NumPy, python-chess for grading</td><td>Computational graders have their own edge cases, documented in the README</td></tr>
+      <tr><td>Fixed benchmarks cannot detect model version changes</td><td>Seeded, reproducible runs with published timestamps</td><td>Interpreting score changes requires controlled conditions we do not enforce</td></tr>
+      <tr><td>Human-curated hard problems are expensive to scale</td><td>Parametric difficulty via mathematical parameters</td><td>Parametric difficulty may not map cleanly to human difficulty perception</td></tr>
     </tbody>
   </table>
+</section>
+
+<!-- ─── Observed Behaviors ─── -->
+<section class="page reveal">
+  <div class="section-label">Observed Behaviors</div>
+  <h2>Empirical findings from FORGE runs</h2>
+
+  <h3>Shannon Entropy — log2 hallucination</h3>
+
+  <p>
+    During evaluation on seed 42, qwen/qwen3-coder-flash produced confident multi-step
+    entropy calculations using incorrect log2 values. Example: log2(107) computed as
+    6.7175 versus correct 6.7415 (error −0.024). The model used log2(a/b) = log2(a) − log2(b)
+    with systematically wrong log2 values for integers 103, 107, 221, 309, 321, 332, 347.
+    The reasoning trace showed no uncertainty at the point of error. FORGE's deterministic
+    grader flagged all 10 entropy questions as incorrect. Raw response (first failure,
+    truncated): "log2(50/321) = log2(50) - log2(321) = 5.6439 - 8.3219 = -2.6780" (actual: -2.6826).
+  </p>
 </section>
 
 <!-- ─── Get started ─── -->
@@ -768,11 +792,11 @@ footer a:hover { color: var(--ink); }
   <div class="code-block">
     <span class="comment"># Quick evaluation (~5 min, 250 questions)</span><br>
     <span class="prompt">$</span> <span class="cmd">python -m forge.cli run \</span><br>
-    <span class="cmd">&nbsp;&nbsp;--mode quick \</span><br>
-    <span class="cmd">&nbsp;&nbsp;--model qwen/qwen3-235b-a22b-thinking-2507 \</span><br>
-    <span class="cmd">&nbsp;&nbsp;--api-base https://openrouter.ai/api/v1 \</span><br>
-    <span class="cmd">&nbsp;&nbsp;--api-key sk-... \</span><br>
-    <span class="cmd">&nbsp;&nbsp;--seed 42</span>
+    <span class="cmd">  --mode quick \</span><br>
+    <span class="cmd">  --model qwen/qwen3-235b-a22b-thinking-2507 \</span><br>
+    <span class="cmd">  --api-base https://openrouter.ai/api/v1 \</span><br>
+    <span class="cmd">  --api-key sk-... \</span><br>
+    <span class="cmd">  --seed 42</span>
   </div>
 
   <h3>Run via web UI</h3>
@@ -790,7 +814,7 @@ footer a:hover { color: var(--ink); }
       <tr><th>Mode</th><th>Questions</th><th>Time</th><th>Cost</th></tr>
     </thead>
     <tbody>
-      <tr><td>nano</td><td>5</td><td>~30s</td><td>&lt;$0.01</td></tr>
+      <tr><td>nano</td><td>5</td><td>~30s</td><td><$0.01</td></tr>
       <tr><td>quick</td><td>250</td><td>~5 min</td><td>~$0.10</td></tr>
       <tr><td>standard</td><td>2,500</td><td>~1 hr</td><td>~$1.00</td></tr>
       <tr><td>full</td><td>10,000</td><td>~4 hr</td><td>~$4.00</td></tr>
@@ -802,7 +826,8 @@ footer a:hover { color: var(--ink); }
 <footer class="page">
   <div class="footer-row">
     <p>
-      Built by <a href="https://github.com/mohamedhossammohamed">Mohamed Hossam</a>
+      Built by <a href="https://github.com/mohamedhossammohamed">Mohamed Hossam</a>,
+      first-year medical student
       · <a href="https://x.com/MohamedHz72007">@MohamedHz72007</a>
     </p>
     <p>

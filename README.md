@@ -1,55 +1,53 @@
 # FORGE: Formally Generated Reasoning Evaluation
 
-**Testing Understanding Over Interpolation**
+**An open question about LLM evaluation, built as a tool.**
 
 ---
 
 ## The Hypothesis
 
-Large language models—when performing well—may be operating with something functionally equivalent to an internal model of reality: a compressed, weighted representation of mathematical structure, physical law, and logical relationship embedded in their weights. This remains a highly contested scientific claim.
+This project starts from a contested scientific question: when a large language model solves a problem correctly, is it doing something that resembles reasoning over internalized structure, or is it pattern-matching against statistical regularities in its training data?
 
-**FORGE does not assert an answer, but rather serves as an operational instrument meticulously designed to produce clean, contamination-free evidence that bears directly on this question.**
+We do not know the answer. Neither does anyone else, with confidence.
 
-### Core Claim
+**FORGE is an instrument designed to produce evidence that bears on this question — not to answer it.**
 
-> A model's score on FORGE is evidence—not proof—of how deeply it has internalized mathematical and physical structure, as distinct from how much relevant training data it has seen.
+### What we hypothesize
 
-### Falsifiability Statement
+We hypothesize that a model's performance profile across difficulty tiers — specifically the relationship between its interpolation score (easy/medium problems) and its extrapolation score (hard/expert problems) — is informative about whether it has internalized mathematical structure or is primarily retrieving from training distribution.
 
-The hypothesis would be robustly disproven if models scoring highly on maximum difficulty tiers suffer catastrophic performance degradation when mathematical isomorphic structure remains identical but semantic framing is inverted—proving reliance on surface-level pattern matching rather than internalized circuits.
+A model that scores well on easy problems and collapses on hard ones is consistent with sophisticated retrieval. A model that degrades gradually across tiers is consistent with something more like generalization. We do not claim this distinction is clean, or that FORGE scores prove either interpretation.
+
+### Falsifiability
+
+The hypothesis would be evidence against if models scoring highly on maximum difficulty tiers suffer catastrophic performance degradation when the mathematical structure of a problem is held constant but its surface framing is inverted. That would suggest reliance on surface pattern matching rather than internalized structure. We have not run this experiment systematically. It is a direction for future work.
 
 ---
 
 ## The Problem with Static Benchmarks
 
-Existing benchmarks suffer from structural failures:
+Existing benchmarks have well-documented structural problems:
 
-- **Data Contamination**: Static question banks are inevitably ingested during pre-training, inflating scores through memorization rather than reasoning
-- **Ceiling Effects**: Models game multiple-choice formats and exploit linguistic heuristics
-- **LLM-as-Judge Bias**: Open-ended evaluations introduce hallucination and subjective bias
-- **The Complexity Cliff**: Models exhibit catastrophic accuracy collapse—not graceful degradation—when pushed slightly beyond training distribution (Apple's "Illusion of Thinking")
+- **Data contamination**: Static question banks are likely present in pre-training corpora, making it difficult to distinguish memorization from reasoning
+- **Ceiling effects**: Multiple-choice formats are gameable; models exploit linguistic heuristics
+- **LLM-as-judge evaluation**: Open-ended grading introduces its own hallucination and consistency problems
+- **The complexity cliff**: Several papers have documented that model accuracy does not degrade gracefully at the boundary of training distribution — it collapses
 
-**FORGE resolves this by mathematically ensuring zero substring collision with any existing pre-training dataset. Every generated problem is mathematically unique.**
+FORGE addresses these by generating every problem procedurally at runtime from a seed. Verbatim contamination of generated questions is statistically near-impossible. Structural similarity to training data — problems that resemble the *type* of problem seen during training — cannot be ruled out and is a genuine limitation.
 
 ---
 
 ## The Nerfed Model Problem
 
-AI labs face a quiet incentive problem.
+AI labs face a quiet incentive problem. A model is released. It scores well on public benchmarks. The scores become part of the marketing. Then, quietly, the model is updated — safety tuning, cost optimization, behavior changes. The published scores no longer reflect what users are actually running.
 
-A model is released. It scores well on public benchmarks. The benchmark scores become part of the marketing. Then, quietly, the model is updated — safety tuning, cost optimization, behavior changes. The scores on the original benchmark no longer reflect what users are actually running.
+Fixed benchmarks cannot distinguish between "the model got smarter" and "the model was tuned toward this specific benchmark distribution."
 
-There is currently no clean way to detect this. Fixed benchmarks cannot distinguish between "the model got smarter" and "the model was tuned toward this specific benchmark distribution." The question of whether a deployed model today matches the model that produced its published scores is largely unanswerable with existing tools.
+Because every FORGE run is governed by a published seed and every question is generated deterministically at runtime, a score is reproducible. Any researcher can rerun seed `42` six months from now against the same model endpoint and compare. If the score has shifted, the shift is documented.
 
-FORGE changes this.
+Whether score changes over model versions reflect capability changes or distribution-specific tuning is something FORGE data may help investigate — though drawing firm conclusions would require controlled conditions we do not currently enforce.
 
-Because every FORGE run is governed by a public seed and every question is generated deterministically at runtime, a score is not just a number — it is a reproducible experimental result. Any researcher, journalist, or user can rerun seed `42` six months from now against the same model endpoint and compare. If the score has shifted, the shift is real and documented.
-
-This makes FORGE the first benchmark with a built-in longitudinal audit trail.
-
-Labs that publish FORGE scores alongside a seed and timestamp are making a verifiable commitment. Labs that avoid doing so are making a different kind of statement. Users and researchers can draw their own conclusions.
-
-**FORGE does not accuse anyone of nerfing. It simply makes the question answerable for the first time.**
+**FORGE does not accuse anyone of nerfing. It makes the question more tractable.**
 
 ---
 
@@ -90,13 +88,13 @@ Each category tests a distinct axis of theoretical internal world-models:
 ### Deterministic Generation
 
 All problems are generated from a master seed using SHA-256 derived RNGs:
-- Same seed → Identical problems across runs
-- Different seeds → Mathematically unique problems
-- Verbatim generated questions have near-zero probability of existing in training corpora
+- Same seed → identical problems across runs, on any machine
+- Different seeds → statistically distinct problems
+- Verbatim generated questions have near-zero probability of existing in training corpora; structural similarity to training data is a separate concern and cannot be excluded
 
 ### Seed Security
 
-FORGE uses a **256-bit hash space** (SHA-256), making pre-computation physically impossible:
+FORGE uses a 256-bit hash space (SHA-256). The space of possible problem sets is large enough that exhaustive pre-computation is not feasible:
 
 | Metric | Value |
 |--------|-------|
@@ -106,22 +104,23 @@ FORGE uses a **256-bit hash space** (SHA-256), making pre-computation physically
 
 **Best practices:**
 - **For public benchmarks**: Use a random seed and publish it with your results
-- **For contamination testing**: Use a secret seed that AI labs cannot know in advance
+- **For contamination testing**: Use a seed that is not disclosed in advance
 - **For reproducibility**: Document the seed alongside your score
 
-If an AI lab knows your seed, they can pre-compute all problems. Keep seeds secret for genuine evaluations.
+If a lab knows your seed, they can pre-compute all problems. Keep seeds private for genuine evaluations.
 
-### Zero-LLM Grading
+### Computational Grading
 
-All evaluation is performed through exact computational verification:
+All evaluation uses deterministic computational verification rather than LLM judges:
 - **SymPy**: Symbolic equivalence for expressions, equations, and calculus
 - **NumPy**: Matrix operations and numerical precision
 - **python-chess**: Game state validation and legal move verification
-- **No LLM judges**: Eliminates subjective bias and hallucination
 
-### Scoring Methodology
+This grading approach is computationally deterministic — the same input always produces the same grade, and the grading logic is inspectable. It is not perfect. SymPy has known edge cases with certain symbolic forms. Numeric tolerances are judgment calls. These limitations are documented in the Limitations section below.
 
-**FORGE Aggregate Score** (weighted geometric mean with extrapolation bias):
+### Scoring
+
+**Per-category score** (extrapolation-weighted):
 
 ```
 C_c = Σ(α^d · S_{c,d}) / Σ(α^d)
@@ -132,22 +131,74 @@ Where:
 - `α = 1.5` (extrapolation weight parameter)
 - Higher difficulties contribute exponentially more to the score
 
-**Complexity Cliff Index**: The exact difficulty tier where accuracy drops >30% from the previous tier, quantifying the "Illusion of Thinking" phenomenon.
+**FORGE Score**: Mean of all per-category scores `C_c`.
+
+**Complexity Cliff Index**: The first difficulty tier where accuracy drops more than 30% from the previous tier. This is an observation about where performance degrades — it is not a proof of anything about world models. It is a useful diagnostic number.
+
+---
+
+## Limitations
+
+These are real limitations, not caveats. Read them before drawing conclusions from FORGE scores.
+
+**Statistical power by mode:**
+
+| Mode | Questions | 95% CI margin | Interpretation |
+|------|-----------|---------------|----------------|
+| `nano` | 5 | ±44% | Smoke test only. Not meaningful for comparison. |
+| `quick` | 250 | ±6.2% | Useful for rough ordering. Not sufficient for fine distinctions. |
+| `standard` | 2,500 | ±2.0% | Adequate for most research comparisons. |
+| `full` | 10,000 | ±1.0% | High confidence. Expensive. |
+
+Quick mode results on cheap models are not meaningful tests of the hypothesis. The statistical power is too low and the models are unlikely to be operating in the regime the hypothesis is about.
+
+**Grading edge cases:**
+
+- *SymPy*: Symbolic simplification can fail on certain trigonometric identities, piecewise functions, and expressions involving special functions. When SymPy cannot simplify a difference to zero, it returns False even if the expressions are mathematically equivalent. This produces false negatives.
+- *Numeric tolerance*: The 1e-4 relative tolerance used in most numeric categories is a judgment call. Problems with very large or very small answers may grade incorrectly at this threshold.
+- *Quantum amplitudes*: The answer parser handles ket notation, JSON arrays, and comma-separated complex values. Unusual formatting from models may not parse correctly, producing false negatives.
+- *Chess*: Puzzle generation uses a minimax search over randomly placed endgame positions. The search is bounded (400 attempts per problem). In rare cases the fallback position is used. The grader accepts any move that forces mate in N, not just the canonical first move.
+- *Formal grammars and algorithmic trace*: These categories involve string matching and execution trace comparison. Edge cases in whitespace handling and output formatting may affect grading.
+
+**What FORGE does not control for:**
+
+- Structural similarity between generated problems and training data. Procedural generation prevents verbatim contamination; it does not prevent a model from having seen many similar problems during training.
+- Prompt sensitivity. The system prompt instructs models to output answers in a specific format. Models that do not follow this format will score lower regardless of whether they computed the correct answer.
+- Reasoning token costs. Models that use extended thinking consume significantly more tokens per problem. Cost estimates in the UI are approximate.
+
+---
+
+## Observed Behaviors
+
+**Shannon Entropy — log2 hallucination**
+
+During evaluation on seed 42, qwen/qwen3-coder-flash produced confident multi-step entropy calculations using incorrect log2 values. Example: log2(107) computed as 6.7175 versus correct 6.7415 (error −0.024). The model used log2(a/b) = log2(a) − log2(b) with systematically wrong log2 values for integers 103, 107, 221, 309, 321, 332, 347. The reasoning trace showed no uncertainty at the point of error. FORGE's deterministic grader flagged all 10 entropy questions as incorrect. Raw response (first failure, truncated): "log2(50/321) = log2(50) - log2(321) = 5.6439 - 8.3219 = -2.6780" (actual: -2.6826).
+
+---
+
+## Known Issues
+
+These are active limitations in the current implementation.
+
+**Chess (category 7):** The minimax search for mate-in-4 and mate-in-5 positions can be slow because it searches without alpha-beta pruning. This is a performance issue, not a correctness issue. A future version should add pruning or use a tablebase.
+
+**Quantum amplitudes (category 24):** The answer parser handles common output formats but will fail on unusual representations. This category has higher false-negative rates than others.
+
+**Jordan Normal Form (category 4):** At difficulty 5, the generated matrices occasionally have degenerate eigenvalue structures that make the problem ambiguous. The grader handles the most common cases but may miss valid alternative forms.
+
+**Statistical independence:** Problems within a category at the same difficulty level are generated from independent seeds, but the underlying mathematical structure follows the same parametric distribution. This is not full statistical independence and may affect confidence interval calculations.
 
 ---
 
 ## Installation
 
 ```bash
-# Clone the repository
-git clone https://github.com/yourusername/forge-benchmark.git
-cd forge-benchmark
+git clone https://github.com/mohamedhossammohamed/FORGE.git
+cd FORGE
 
-# Create virtual environment
 python -m venv venv
 source venv/bin/activate  # On Windows: venv\Scripts\activate
 
-# Install dependencies
 pip install -r requirements.txt
 ```
 
@@ -155,24 +206,33 @@ pip install -r requirements.txt
 
 ## Quick Start
 
-### CLI Usage
+### CLI
 
 ```bash
-# Run quick evaluation (250 questions, ~15 mins)
+# Smoke test — 5 questions, ~30 seconds
 python -m forge.cli run \
-    --mode quick \
+    --mode nano \
     --model gpt-4o \
     --api-base https://api.openai.com/v1 \
     --api-key sk-your-key-here
 
-# Run standard evaluation (2500 questions, ~3-4 hours)
+# Quick evaluation — 250 questions, ~5 minutes
+python -m forge.cli run \
+    --mode quick \
+    --model gpt-4o \
+    --api-base https://api.openai.com/v1 \
+    --api-key sk-your-key-here \
+    --seed 42
+
+# Standard evaluation — 2,500 questions, ~1 hour
 python -m forge.cli run \
     --mode standard \
     --model claude-3-5-sonnet \
     --api-base https://api.anthropic.com/v1 \
-    --api-key your-key-here
+    --api-key your-key-here \
+    --seed 42
 
-# Run specific categories
+# Run specific categories only
 python -m forge.cli run \
     --mode quick \
     --categories arithmetic_chain,matrix_det,game_nim \
@@ -182,37 +242,29 @@ python -m forge.cli run \
 
 # List all categories
 python -m forge.cli list-categories
-
-# View hypothesis and scoring info
-python -m forge.cli info
 ```
 
-### Gradio UI
+### Web UI (Researcher Tool)
 
 ```bash
-# Launch web interface
-python -m forge.ui
+python -m forge.server
+# Opens at http://localhost:7860/researcher.html
 ```
 
-Opens a local web interface with:
-- Model configuration inputs
-- Run mode selector
-- Seed with randomize button
-- Real-time progress tracking
-- Results dashboard with FORGE Score, Interpolation/Extrapolation scores, and Cliff Index
+The researcher tool provides real-time progress, per-category breakdown, cliff index visualization, multi-model comparison, and snapshot export.
 
 ---
 
 ## Score Interpretation
 
-| Metric | Meaning |
-|--------|---------|
-| **FORGE Score** | Weighted accuracy emphasizing harder problems. High score = strong internal world-model |
-| **Interpolation Score** | Performance on Easy/Medium tiers. Likely similar to training data distributions |
-| **Extrapolation Score** | Performance on Hard/Expert tiers. Tasks statistically impossible in training data |
-| **Cliff Index** | First difficulty tier where accuracy drops >30%. Low cliff = early capability collapse |
+| Metric | What it measures | What it does not prove |
+|--------|-----------------|----------------------|
+| **FORGE Score** | Weighted accuracy, emphasizing harder problems | That the model has an internal world-model |
+| **Interpolation Score** | Accuracy on easy/medium tiers | That these problems were in training data |
+| **Extrapolation Score** | Accuracy on hard/expert tiers | That these problems were absent from training data |
+| **Cliff Index** | First tier where accuracy drops >30% | The cause of the drop |
 
-**Key Insight**: A model with high Interpolation but low Extrapolation scores is likely memorizing. A model maintaining high scores across both is evidence of generalized reasoning circuits.
+A model with high interpolation and low extrapolation scores is consistent with retrieval-dominant behavior. A model that maintains accuracy across tiers is consistent with generalization. Neither interpretation is proven by the score alone.
 
 ---
 
@@ -220,9 +272,10 @@ Opens a local web interface with:
 
 | Mode | Questions | Statistical Power | Est. Cost | Runtime |
 |------|-----------|-------------------|-----------|---------|
-| `--mode quick` | 250 | Low | <$1.00 | ~15 mins |
-| `--mode standard` | 2,500 | Moderate (95% CI, ±9.8% ME) | ~$10.00 | 3-4 hours |
-| `--mode full` | 10,000 | High (95% CI, ±5% ME) | ~$40.00 | 12-16 hours |
+| `nano` | 5 | Smoke test only | <$0.01 | ~30s |
+| `quick` | 250 | Low (±6.2% ME) | ~$0.10 | ~5 mins |
+| `standard` | 2,500 | Moderate (±2.0% ME) | ~$1.00 | ~1 hour |
+| `full` | 10,000 | High (±1.0% ME) | ~$4.00 | ~4 hours |
 
 ---
 
@@ -232,37 +285,33 @@ FORGE is designed for extensibility. To add a new category:
 
 1. Create `forge/categories/your_category.py`
 2. Subclass `ForgeCategory`
-3. Implement required methods:
+3. Implement the required interface:
 
 ```python
 from forge.core.generator import ForgeCategory, Problem
 
 class YourCategory(ForgeCategory):
-    
+
     @property
     def name(self) -> str:
         return "your_category"
-    
+
     @property
     def display_name(self) -> str:
         return "Your Category Name"
-    
+
     def get_difficulty_params(self, difficulty: int) -> dict:
-        # Return parameters for each difficulty level (1-5)
         params = {
-            1: {"param1": value, ...},
+            1: {"param1": value},
             2: {...},
             # ...
         }
         return params.get(difficulty, params[3])
-    
+
     def generate(self, difficulty: int, iteration: int) -> Problem:
         rng = self.get_rng(difficulty, iteration)
         params = self.get_difficulty_params(difficulty)
-        
-        # Generate problem using rng
-        # ...
-        
+        # Generate problem using rng — do not use any other randomness source
         return Problem(
             question="...",
             answer=...,
@@ -272,21 +321,20 @@ class YourCategory(ForgeCategory):
             seed=self.base_seed,
             metadata={...},
         )
-    
+
     def grade(self, prediction: str, answer) -> bool:
-        # Grade using exact computational verification
-        # Use ForgeGrader methods or custom logic
+        # Use SymPy, NumPy, or exact comparison — not string heuristics
         return prediction == answer
 ```
 
 4. Register in `forge/categories/__init__.py`
 
-### Design Principles for Categories
+### Design principles for categories
 
-- **Procedural Generation**: Every question must be generated from a seed, not selected from a bank
-- **Deterministic Grading**: Use SymPy, NumPy, or game engines—never LLM judges
-- **Parametric Scaling**: Difficulty must be controlled by mathematical parameters
-- **Edge Case Handling**: Document and handle floating-point issues, degenerate cases, etc.
+- **Procedural generation**: Every question must be generated from the RNG, not selected from a bank
+- **Computational grading**: Use SymPy, NumPy, or domain-specific engines — not LLM judges or string heuristics
+- **Parametric difficulty**: Difficulty must be controlled by explicit mathematical parameters, not problem selection
+- **Document edge cases**: If your grader has known failure modes, document them in the category file
 
 ---
 
@@ -300,14 +348,15 @@ forge-benchmark/
 │   ├── __init__.py
 │   ├── core/
 │   │   ├── generator.py       # Base class and shared generation interfaces
-│   │   ├── grader.py          # Deterministic grading logic
-│   │   ├── runner.py          # Model API execution, timeout handling
+│   │   ├── grader.py          # Computational grading utilities
+│   │   ├── runner.py          # Model API execution, timeout handling, scoring
 │   │   └── state.py           # Seed management and deterministic hashing
 │   ├── categories/
-│   │   ├── __init__.py        # Category registry with auto-discovery
+│   │   ├── __init__.py        # Category registry
 │   │   └── [25 category files]
 │   ├── cli.py                 # Typer command-line interface
-│   └── ui.py                  # Gradio frontend interface
+│   ├── server.py              # FastAPI backend with SSE streaming
+│   └── ui.py                  # Gradio interface (alternative to server)
 └── configs/
     ├── mode_full.json
     ├── mode_standard.json
@@ -318,33 +367,30 @@ forge-benchmark/
 
 ## Contributing
 
-We welcome contributions that expand the category registry or improve grading precision.
+Contributions that improve grading precision, add well-designed categories, or fix documented edge cases are welcome.
 
 1. Fork the repository
 2. Create a feature branch
-3. Implement your category following the design principles
-4. Add tests for edge cases
-5. Submit a pull request
+3. Implement your change with tests for edge cases
+4. Submit a pull request with a clear description of what the change fixes or adds
 
-### Priority Areas
+### Priority areas
 
-- Additional mathematical domains (Topology, Number Theory, etc.)
-- Physics simulations (Classical Mechanics, Electromagnetism)
-- Formal verification problems (SAT solving, Model Checking)
-- Optimization problems (Linear Programming, Constraint Satisfaction)
+- Alpha-beta pruning for chess puzzle generation (currently unbounded minimax)
+- Additional mathematical domains (topology, number theory, classical mechanics)
+- Improved quantum amplitude parsing for unusual model output formats
+- Formal verification problems (SAT solving, model checking)
 
 ---
 
 ## Citation
 
-If you use FORGE in your research, please cite:
-
 ```bibtex
-@software{forge2024,
+@software{forge2025,
   title={FORGE: Formally Generated Reasoning Evaluation},
-  author={Your Name},
-  year={2024},
-  url={https://github.com/yourusername/forge-benchmark}
+  author={Hossam, Mohamed},
+  year={2025},
+  url={https://github.com/mohamedhossammohamed/FORGE}
 }
 ```
 
@@ -352,22 +398,22 @@ If you use FORGE in your research, please cite:
 
 ## License
 
-MIT License - See [LICENSE](LICENSE) for details.
+MIT License — see [LICENSE](LICENSE) for details.
 
 ---
 
 ## Acknowledgments
 
-- Inspired by Apple ML Research's "Illusion of Thinking" and concerns about benchmark contamination
-- Built on SymPy, NumPy, python-chess, and the scientific Python ecosystem
-- Designed for integration with Hugging Face lm-evaluation-harness
+Built on SymPy, NumPy, python-chess, and the scientific Python ecosystem. Motivated by Apple ML Research's "Illusion of Thinking" paper and ongoing concerns about benchmark contamination in the field.
 
 ---
 
 ## Author
 
-Built by [Mohamed Hossam](https://github.com/mohamedhossammohamed) · [@MohamedHz72007](https://x.com/MohamedHz72007)
+Built by [Mohamed Hossam](https://github.com/mohamedhossammohamed), first-year medical student, as an open question about LLM evaluation. Contributions welcome.
+
+[@MohamedHz72007](https://x.com/MohamedHz72007)
 
 ---
 
-**FORGE is an instrument for producing evidence, not asserting conclusions. It asks whether models truly understand mathematical structure, or merely recognize its statistical shadow in training data.**
+*FORGE is an instrument for producing evidence, not asserting conclusions. The question it asks — whether models generalize or interpolate — does not yet have a clean answer. That is why the question is worth asking carefully.*
