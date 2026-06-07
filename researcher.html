@@ -33,57 +33,132 @@ body {
   color: var(--text);
   background: var(--bg);
   line-height: 1.5;
-  height: 100vh;
-  overflow: hidden;
+  min-height: 100vh;
 }
 
-/* ─── Layout ─── */
+::selection { background: var(--ink); color: #fff; }
 
-.app {
-  display: flex;
-  height: 100vh;
+/* ─── Nav ─── */
+
+nav {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: rgba(250,250,250,0.92);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--border);
+  padding: calc(var(--unit) * 1.5) 0;
 }
 
-/* ─── Left Panel ─── */
-
-.panel-left {
-  width: 320px;
-  min-width: 320px;
-  background: var(--surface);
-  border-right: 1px solid var(--border);
-  overflow-y: auto;
-  padding: calc(var(--unit) * 3);
-  display: flex;
-  flex-direction: column;
-  gap: calc(var(--unit) * 3);
-}
-
-.panel-header {
+nav .inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 calc(var(--unit) * 3);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding-bottom: calc(var(--unit) * 2);
-  border-bottom: 1px solid var(--border);
 }
 
-.panel-logo {
+.nav-logo {
   font-family: var(--font-serif);
-  font-size: 24px;
+  font-size: 20px;
   color: var(--ink);
   text-decoration: none;
 }
 
-.btn-link {
-  font-family: var(--font-mono);
-  font-size: 12px;
+.nav-links {
+  display: flex;
+  gap: calc(var(--unit) * 3);
+  list-style: none;
+}
+
+.nav-links a {
+  font-size: 13px;
   color: var(--text-secondary);
   text-decoration: none;
   transition: color 150ms ease;
 }
 
-.btn-link:hover { color: var(--ink); }
+.nav-links a:hover { color: var(--ink); }
 
-/* ─── Form fields ─── */
+/* ─── Backend status banner ─── */
+
+.backend-banner {
+  padding: calc(var(--unit) * 1.5) calc(var(--unit) * 3);
+  text-align: center;
+  font-size: 13px;
+  border-bottom: 1px solid var(--border);
+  display: none;
+}
+
+.backend-banner.checking {
+  display: block;
+  background: #FFF8E1;
+  color: #8B6914;
+}
+
+.backend-banner.offline {
+  display: block;
+  background: #FFF0F0;
+  color: var(--error);
+}
+
+.backend-banner.online {
+  display: block;
+  background: #F0FFF4;
+  color: var(--success);
+}
+
+.backend-banner code {
+  background: rgba(0,0,0,0.06);
+  padding: 2px 6px;
+  font-size: 12px;
+}
+
+/* ─── Layout ─── */
+
+.app {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: calc(var(--unit) * 3);
+}
+
+/* ─── Tabs ─── */
+
+.tabs {
+  display: flex;
+  gap: 0;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: calc(var(--unit) * 3);
+}
+
+.tab {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  background: transparent;
+  border: none;
+  padding: calc(var(--unit) * 1.5) calc(var(--unit) * 2.5);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: all 150ms ease;
+}
+
+.tab:hover { color: var(--text); }
+.tab.active { color: var(--ink); border-bottom-color: var(--ink); }
+
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
+
+/* ─── Form ─── */
+
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: calc(var(--unit) * 2) calc(var(--unit) * 3);
+  margin-bottom: calc(var(--unit) * 3);
+}
 
 .field {
   display: flex;
@@ -102,14 +177,13 @@ body {
 .field-hint {
   font-size: 12px;
   color: var(--text-tertiary);
-  line-height: 1.4;
 }
 
 .field-input {
   font-family: var(--font-mono);
   font-size: 13px;
   color: var(--text);
-  background: var(--bg);
+  background: var(--surface);
   border: 1px solid var(--border);
   padding: calc(var(--unit) * 1) calc(var(--unit) * 1.5);
   width: 100%;
@@ -119,41 +193,6 @@ body {
 .field-input::placeholder { color: var(--text-tertiary); }
 .field-input:focus { outline: none; border-color: var(--ink); }
 
-.field-input.error { border-color: var(--error); }
-.field-input.valid { border-color: var(--success); }
-
-.field-error {
-  font-size: 12px;
-  color: var(--error);
-  display: none;
-}
-
-.field-error.visible { display: block; }
-
-/* ─── Password toggle ─── */
-
-.password-wrap {
-  position: relative;
-}
-
-.password-wrap .field-input { padding-right: calc(var(--unit) * 4); }
-
-.password-toggle {
-  position: absolute;
-  right: calc(var(--unit) * 1);
-  top: 50%;
-  transform: translateY(-50%);
-  background: none;
-  border: none;
-  cursor: pointer;
-  color: var(--text-tertiary);
-  font-size: 14px;
-  padding: 4px;
-  transition: color 150ms ease;
-}
-
-.password-toggle:hover { color: var(--text); }
-
 /* ─── Mode pills ─── */
 
 .mode-pills {
@@ -162,12 +201,11 @@ body {
 }
 
 .mode-pill {
-  flex: 1;
   font-family: var(--font-mono);
   font-size: 12px;
   font-weight: 500;
   text-align: center;
-  padding: calc(var(--unit) * 1) calc(var(--unit) * 1.5);
+  padding: calc(var(--unit) * 1) calc(var(--unit) * 2);
   border: 1px solid var(--border);
   background: transparent;
   color: var(--text-secondary);
@@ -176,130 +214,71 @@ body {
 }
 
 .mode-pill:hover { border-color: var(--ink); color: var(--text); }
+.mode-pill.active { background: var(--ink); color: #fff; border-color: var(--ink); }
 
-.mode-pill.active {
+/* ─── Buttons ─── */
+
+.btn {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 500;
+  padding: calc(var(--unit) * 1.5) calc(var(--unit) * 3);
+  cursor: pointer;
+  transition: all 150ms ease;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  gap: calc(var(--unit) * 1);
+  text-decoration: none;
+}
+
+.btn-primary {
   background: var(--ink);
   color: #fff;
-  border-color: var(--ink);
+  border: 1px solid var(--ink);
 }
 
-.mode-pill:focus-visible {
-  outline: 1px solid var(--ink);
-  outline-offset: 2px;
-}
+.btn-primary:hover { opacity: 0.85; }
+.btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
 
-.mode-info {
-  font-size: 12px;
-  color: var(--text-tertiary);
-  margin-top: calc(var(--unit) * 0.5);
-}
-
-/* ─── Seed row ─── */
-
-.seed-row {
-  display: flex;
-  gap: calc(var(--unit) * 1);
-  align-items: flex-end;
-}
-
-.seed-row .field { flex: 1; }
-
-.btn-icon {
-  font-family: var(--font-mono);
-  font-size: 16px;
-  background: var(--bg);
+.btn-ghost {
+  background: transparent;
+  color: var(--ink);
   border: 1px solid var(--border);
-  color: var(--text-secondary);
-  width: 36px;
-  height: 36px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: border-color 150ms ease, color 150ms ease;
-  flex-shrink: 0;
 }
 
-.btn-icon:hover { border-color: var(--ink); color: var(--ink); }
+.btn-ghost:hover { border-color: var(--ink); }
 
-/* ─── Cost row ─── */
-
-.cost-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: calc(var(--unit) * 2);
+.btn-sm {
+  font-size: 12px;
+  padding: calc(var(--unit) * 1) calc(var(--unit) * 2);
 }
-
-/* ─── Run button ─── */
 
 .btn-run {
   font-family: var(--font-serif);
   font-size: 16px;
-  color: #fff;
   background: var(--ink);
+  color: #fff;
   border: none;
   width: 100%;
   height: 48px;
   cursor: pointer;
-  transition: opacity 150ms ease, transform 100ms ease;
-  position: relative;
-  overflow: hidden;
-}
-
-.btn-run:hover { opacity: 0.9; }
-.btn-run:active { transform: scale(0.995); }
-
-.btn-run:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-}
-
-.btn-run.loading .btn-run-text { opacity: 0; }
-
-.btn-run-dots {
-  position: absolute;
-  inset: 0;
+  transition: opacity 150ms ease;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
-  opacity: 0;
-  pointer-events: none;
+  gap: calc(var(--unit) * 1);
 }
 
-.btn-run.loading .btn-run-dots { opacity: 1; }
-
-.btn-run-dot {
-  width: 6px;
-  height: 6px;
-  background: #fff;
-  border-radius: 50%;
-  animation: pulse 1.2s ease-in-out infinite;
-}
-
-.btn-run-dot:nth-child(2) { animation-delay: 0.2s; }
-.btn-run-dot:nth-child(3) { animation-delay: 0.4s; }
-
-@keyframes pulse {
-  0%, 80%, 100% { opacity: 0.2; transform: scale(0.8); }
-  40% { opacity: 1; transform: scale(1); }
-}
+.btn-run:hover { opacity: 0.85; }
+.btn-run:disabled { opacity: 0.4; cursor: not-allowed; }
 
 /* ─── Progress ─── */
 
-.progress-section {
-  display: none;
-  flex-direction: column;
-  gap: calc(var(--unit) * 1.5);
-  padding-top: calc(var(--unit) * 2);
-  border-top: 1px solid var(--border);
-}
-
-.progress-section.active { display: flex; }
-
-.progress-line {
+.progress-bar {
   height: 1px;
   background: var(--border);
+  margin: calc(var(--unit) * 2) 0;
   position: relative;
   overflow: hidden;
 }
@@ -312,14 +291,10 @@ body {
   transition: width 300ms ease;
 }
 
-.progress-label {
+.progress-text {
   font-size: 13px;
-  color: var(--text);
-}
-
-.progress-detail {
-  font-size: 12px;
   color: var(--text-secondary);
+  margin-bottom: calc(var(--unit) * 1);
 }
 
 .progress-time {
@@ -327,135 +302,50 @@ body {
   color: var(--text-tertiary);
 }
 
-.btn-cancel {
-  font-family: var(--font-mono);
-  font-size: 12px;
-  color: var(--text-secondary);
-  background: transparent;
-  border: 1px solid var(--border);
-  padding: calc(var(--unit) * 0.75) calc(var(--unit) * 1.5);
-  cursor: pointer;
-  transition: border-color 150ms ease, color 150ms ease;
-  align-self: flex-start;
-}
-
-.btn-cancel:hover { border-color: var(--error); color: var(--error); }
-
-/* ─── Right Panel ─── */
-
-.panel-right {
-  flex: 1;
-  overflow-y: auto;
-  padding: calc(var(--unit) * 4);
-  display: flex;
-  flex-direction: column;
-}
-
-/* ─── Empty state ─── */
-
-.empty-state {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  gap: calc(var(--unit) * 2);
-}
-
-.empty-logo {
-  font-family: var(--font-serif);
-  font-size: 48px;
-  color: var(--border);
-}
-
-.empty-text {
-  font-size: 14px;
-  color: var(--text-tertiary);
-}
-
 /* ─── Live feed ─── */
 
 .feed {
-  display: none;
-  flex-direction: column;
-  gap: 2px;
-  flex: 1;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  max-height: 300px;
   overflow-y: auto;
-  padding-bottom: calc(var(--unit) * 4);
+  margin: calc(var(--unit) * 2) 0;
 }
-
-.feed.active { display: flex; }
 
 .feed-item {
   font-size: 12px;
   padding: calc(var(--unit) * 1) calc(var(--unit) * 1.5);
   border-left: 2px solid transparent;
-  opacity: 0;
-  transform: translateY(4px);
-  animation: feedIn 200ms ease forwards;
   display: flex;
   gap: calc(var(--unit) * 2);
-  align-items: baseline;
+  opacity: 0;
+  animation: fadeIn 200ms ease forwards;
 }
 
-@keyframes feedIn {
-  to { opacity: 1; transform: translateY(0); }
-}
+@keyframes fadeIn { to { opacity: 1; } }
 
 .feed-item.correct { border-left-color: var(--success); }
 .feed-item.wrong { border-left-color: var(--error); }
-.feed-item.error { border-left-color: var(--amber); }
 
-.feed-cat {
-  color: var(--text-secondary);
-  min-width: 180px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.feed-diff {
-  color: var(--text-tertiary);
-  min-width: 40px;
-}
-
-.feed-status {
-  font-weight: 500;
-  min-width: 20px;
-}
-
+.feed-cat { color: var(--text-secondary); min-width: 160px; }
+.feed-status { font-weight: 500; min-width: 20px; }
 .feed-status.ok { color: var(--success); }
 .feed-status.fail { color: var(--error); }
-.feed-status.err { color: var(--amber); }
-
-.feed-time {
-  color: var(--text-tertiary);
-  margin-left: auto;
-}
+.feed-time { color: var(--text-tertiary); margin-left: auto; }
 
 /* ─── Results ─── */
-
-.results {
-  display: none;
-  flex-direction: column;
-  gap: calc(var(--unit) * 4);
-}
-
-.results.active { display: flex; }
 
 .metric-row {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: calc(var(--unit) * 2);
+  margin: calc(var(--unit) * 3) 0;
 }
 
 .metric-card {
   border: 1px solid var(--border);
   padding: calc(var(--unit) * 2.5);
-  display: flex;
-  flex-direction: column;
-  gap: calc(var(--unit) * 0.5);
+  background: var(--surface);
 }
 
 .metric-label {
@@ -472,7 +362,8 @@ body {
   font-weight: 500;
   color: var(--ink);
   font-variant-numeric: tabular-nums;
-  line-height: 1;
+  line-height: 1.2;
+  margin-top: calc(var(--unit) * 0.5);
 }
 
 .metric-value.amber { color: var(--amber); }
@@ -480,45 +371,53 @@ body {
 .metric-sub {
   font-size: 12px;
   color: var(--text-tertiary);
+  margin-top: calc(var(--unit) * 0.5);
 }
 
-/* ─── Category table ─── */
+/* ─── Section headers ─── */
 
 .section-title {
   font-family: var(--font-serif);
   font-size: 18px;
   color: var(--ink);
   margin-bottom: calc(var(--unit) * 2);
+  margin-top: calc(var(--unit) * 4);
 }
 
-.cat-table {
+/* ─── Data table ─── */
+
+.data-table {
   width: 100%;
   border-collapse: collapse;
+  font-size: 13px;
+  margin: calc(var(--unit) * 2) 0;
 }
 
-.cat-table th {
-  font-size: 11px;
+.data-table th {
   font-weight: 500;
   color: var(--text-secondary);
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
   text-align: left;
   padding: calc(var(--unit) * 1) calc(var(--unit) * 1.5);
-  border-bottom: 1px solid var(--border);
+  border-bottom: 2px solid var(--border);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
   cursor: pointer;
 }
 
-.cat-table th:hover { color: var(--text); }
+.data-table th:hover { color: var(--text); }
 
-.cat-table td {
-  font-size: 13px;
+.data-table td {
   padding: calc(var(--unit) * 1.5) calc(var(--unit) * 1.5);
   border-bottom: 1px solid var(--border);
+  color: var(--text-secondary);
   vertical-align: middle;
 }
 
-.cat-table tr { cursor: pointer; transition: background 150ms ease; }
-.cat-table tr:hover { background: #F7F8FA; }
+.data-table tr { transition: background 150ms ease; }
+.data-table tr:hover { background: #F7F8FA; }
+
+/* ─── Tier squares ─── */
 
 .tier-squares {
   display: flex;
@@ -536,203 +435,342 @@ body {
 
 /* ─── Cliff chart ─── */
 
-.cliff-chart {
-  margin-top: calc(var(--unit) * 2);
-}
-
 .cliff-svg {
   width: 100%;
   height: 160px;
+  margin: calc(var(--unit) * 2) 0;
 }
 
-.cliff-line {
-  fill: none;
-  stroke: var(--ink);
-  stroke-width: 2;
+.cliff-line { fill: none; stroke: var(--ink); stroke-width: 2; }
+.cliff-dot { fill: var(--ink); }
+.cliff-marker { stroke: var(--amber); stroke-width: 1.5; stroke-dasharray: 4 3; }
+.cliff-label { font-family: var(--font-mono); font-size: 11px; fill: var(--amber); }
+.axis-label { font-family: var(--font-mono); font-size: 11px; fill: var(--text-tertiary); }
+
+/* ─── Comparison chart ─── */
+
+.comparison-bar {
+  display: flex;
+  align-items: center;
+  gap: calc(var(--unit) * 1.5);
+  margin: calc(var(--unit) * 1) 0;
 }
 
-.cliff-dot {
-  fill: var(--ink);
+.comparison-label {
+  font-size: 12px;
+  color: var(--text-secondary);
+  min-width: 200px;
+  text-align: right;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.cliff-zone {
-  fill: var(--amber);
-  opacity: 0.15;
+.comparison-track {
+  flex: 1;
+  height: 20px;
+  background: var(--border);
+  position: relative;
+  overflow: hidden;
 }
 
-.cliff-marker {
-  stroke: var(--amber);
-  stroke-width: 1.5;
-  stroke-dasharray: 4 3;
+.comparison-fill {
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  transition: width 600ms ease-out;
 }
 
-.cliff-label {
-  font-family: var(--font-mono);
-  font-size: 11px;
-  fill: var(--amber);
+.comparison-value {
+  font-size: 12px;
+  color: var(--text-secondary);
+  min-width: 50px;
+  font-variant-numeric: tabular-nums;
 }
 
-.axis-label {
-  font-family: var(--font-mono);
-  font-size: 11px;
-  fill: var(--text-tertiary);
+/* ─── Snapshots ─── */
+
+.snapshot-list {
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--unit) * 1);
 }
 
-/* ─── Export row ─── */
+.snapshot-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: calc(var(--unit) * 1.5) calc(var(--unit) * 2);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  transition: border-color 150ms ease;
+}
+
+.snapshot-item:hover { border-color: var(--ink); }
+
+.snapshot-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.snapshot-name {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text);
+}
+
+.snapshot-meta {
+  font-size: 12px;
+  color: var(--text-tertiary);
+}
+
+.snapshot-actions {
+  display: flex;
+  gap: calc(var(--unit) * 1);
+}
+
+/* ─── Empty state ─── */
+
+.empty-state {
+  text-align: center;
+  padding: calc(var(--unit) * 8) 0;
+  color: var(--text-tertiary);
+}
+
+.empty-logo {
+  font-family: var(--font-serif);
+  font-size: 48px;
+  color: var(--border);
+  margin-bottom: calc(var(--unit) * 2);
+}
+
+.empty-text {
+  font-size: 14px;
+}
+
+/* ─── Export ─── */
 
 .export-row {
   display: flex;
   gap: calc(var(--unit) * 2);
+  margin-top: calc(var(--unit) * 3);
   padding-top: calc(var(--unit) * 3);
   border-top: 1px solid var(--border);
 }
 
 .btn-export {
-  font-family: var(--font-mono);
   font-size: 12px;
   color: var(--text-secondary);
   background: transparent;
   border: 1px solid var(--border);
   padding: calc(var(--unit) * 1) calc(var(--unit) * 2);
   cursor: pointer;
-  transition: border-color 150ms ease, color 150ms ease;
+  transition: all 150ms ease;
 }
 
 .btn-export:hover { border-color: var(--ink); color: var(--ink); }
 .btn-export.copied { color: var(--success); border-color: var(--success); }
 
+/* ─── Model queue ─── */
+
+.model-queue {
+  margin: calc(var(--unit) * 2) 0;
+}
+
+.queue-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: calc(var(--unit) * 1) calc(var(--unit) * 1.5);
+  border: 1px solid var(--border);
+  margin-bottom: calc(var(--unit) * 0.5);
+  font-size: 13px;
+}
+
+.queue-name { font-weight: 500; color: var(--text); }
+.queue-base { color: var(--text-tertiary); font-size: 12px; }
+.queue-remove {
+  background: none;
+  border: none;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  font-size: 14px;
+  padding: 2px 6px;
+}
+
+.queue-remove:hover { color: var(--error); }
+
 /* ─── Responsive ─── */
 
-@media (max-width: 900px) {
-  .app { flex-direction: column; height: auto; min-height: 100vh; }
-  .panel-left { width: 100%; min-width: 0; border-right: none; border-bottom: 1px solid var(--border); }
-  .panel-right { min-height: 60vh; }
+@media (max-width: 768px) {
+  .form-grid { grid-template-columns: 1fr; }
   .metric-row { grid-template-columns: repeat(2, 1fr); }
+  .comparison-label { min-width: 120px; }
 }
 </style>
 </head>
 <body>
 
+<!-- ─── Nav ─── -->
+<nav>
+  <div class="inner">
+    <a href="index.html" class="nav-logo">FORGE</a>
+    <ul class="nav-links">
+      <li><a href="index.html">Landing</a></li>
+      <li><a href="researcher.html">Researcher</a></li>
+      <li><a href="https://github.com/mohamedhossammohamed/FORGE" target="_blank">GitHub</a></li>
+    </ul>
+  </div>
+</nav>
+
+<!-- ─── Backend status ─── -->
+<div class="backend-banner" id="backend-banner">
+  <span id="backend-msg"></span>
+</div>
+
 <div class="app">
-  <!-- ─── Left Panel ─── -->
-  <div class="panel-left">
-    <div class="panel-header">
-      <a href="index.html" class="panel-logo">FORGE</a>
-      <a href="https://github.com/mohamedhossammohamed/FORGE" class="btn-link" target="_blank">GitHub</a>
-    </div>
+  <!-- ─── Tabs ─── -->
+  <div class="tabs">
+    <button class="tab active" data-tab="run">Run</button>
+    <button class="tab" data-tab="compare">Compare</button>
+    <button class="tab" data-tab="snapshots">Snapshots</button>
+  </div>
 
-    <div class="field">
-      <label class="field-label" for="model-name">Model name</label>
-      <input type="text" class="field-input" id="model-name" placeholder="e.g. mistralai/mistral-7b-instruct" value="qwen/qwen3-235b-a22b-thinking-2507">
-      <span class="field-error" id="model-error">Model name is required</span>
-    </div>
-
-    <div class="field">
-      <label class="field-label" for="api-base">API Base URL</label>
-      <input type="text" class="field-input" id="api-base" placeholder="https://openrouter.ai/api/v1" value="https://openrouter.ai/api/v1">
-    </div>
-
-    <div class="field">
-      <label class="field-label" for="api-key">API Key</label>
-      <div class="password-wrap">
+  <!-- ─── Run Tab ─── -->
+  <div class="tab-panel active" id="tab-run">
+    <div class="form-grid">
+      <div class="field">
+        <label class="field-label">Model name</label>
+        <input type="text" class="field-input" id="model-name" placeholder="e.g. qwen/qwen3-235b-a22b-thinking-2507">
+        <span class="field-hint">OpenRouter, OpenAI, or any OpenAI-compatible model</span>
+      </div>
+      <div class="field">
+        <label class="field-label">API Base URL</label>
+        <input type="text" class="field-input" id="api-base" value="https://openrouter.ai/api/v1">
+      </div>
+      <div class="field">
+        <label class="field-label">API Key</label>
         <input type="password" class="field-input" id="api-key" placeholder="sk-...">
-        <button class="password-toggle" id="toggle-key" title="Show/hide">👁</button>
-      </div>
-      <span class="field-error" id="key-error">API key is required</span>
-    </div>
-
-    <div class="field">
-      <label class="field-label">Run mode</label>
-      <div class="mode-pills">
-        <button class="mode-pill active" data-mode="nano">nano</button>
-        <button class="mode-pill" data-mode="quick">quick</button>
-        <button class="mode-pill" data-mode="standard">standard</button>
-        <button class="mode-pill" data-mode="full">full</button>
-      </div>
-      <span class="mode-info" id="mode-info">5 questions · ~30s · <$0.01</span>
-    </div>
-
-    <div class="seed-row">
-      <div class="field">
-        <label class="field-label" for="seed">Seed</label>
-        <input type="number" class="field-input" id="seed" value="42" step="1">
-      </div>
-      <button class="btn-icon" id="randomize-seed" title="Randomize">↻</button>
-    </div>
-    <span class="field-hint">Same seed = same questions for all models</span>
-
-    <div class="cost-row">
-      <div class="field">
-        <label class="field-label" for="cost-in">Input $/1M</label>
-        <input type="number" class="field-input" id="cost-in" value="0" step="0.01" min="0">
+        <span class="field-hint">Stored in browser only — never sent to any server except the API provider</span>
       </div>
       <div class="field">
-        <label class="field-label" for="cost-out">Output $/1M</label>
-        <input type="number" class="field-input" id="cost-out" value="0" step="0.01" min="0">
+        <label class="field-label">Run mode</label>
+        <div class="mode-pills">
+          <button class="mode-pill active" data-mode="nano">nano</button>
+          <button class="mode-pill" data-mode="quick">quick</button>
+          <button class="mode-pill" data-mode="standard">standard</button>
+          <button class="mode-pill" data-mode="full">full</button>
+        </div>
+        <span class="field-hint" id="mode-info">5 questions · ~30s · <$0.01</span>
+      </div>
+      <div class="field">
+        <label class="field-label">Seed</label>
+        <div style="display:flex;gap:8px;align-items:flex-end">
+          <input type="number" class="field-input" id="seed" value="42" step="1" style="flex:1">
+          <button class="btn btn-ghost btn-sm" id="randomize-seed">↻</button>
+        </div>
+        <span class="field-hint">Same seed = same questions for all models</span>
+      </div>
+      <div class="field">
+        <label class="field-label">Cost tracking ($/1M tokens)</label>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          <input type="number" class="field-input" id="cost-in" placeholder="Input" value="0" step="0.01">
+          <input type="number" class="field-input" id="cost-out" placeholder="Output" value="0" step="0.01">
+        </div>
       </div>
     </div>
 
-    <button class="btn-run" id="btn-run">
-      <span class="btn-run-text">Run FORGE</span>
-      <span class="btn-run-dots">
-        <span class="btn-run-dot"></span>
-        <span class="btn-run-dot"></span>
-        <span class="btn-run-dot"></span>
-      </span>
-    </button>
+    <button class="btn-run" id="btn-run">Run FORGE</button>
 
-    <div class="progress-section" id="progress">
-      <div class="progress-line"><div class="progress-fill" id="progress-fill"></div></div>
-      <div class="progress-label" id="progress-label">Connecting...</div>
-      <div class="progress-detail" id="progress-detail"></div>
+    <div id="run-progress" style="display:none">
+      <div class="progress-text" id="progress-text">Connecting...</div>
+      <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
       <div class="progress-time" id="progress-time"></div>
-      <button class="btn-cancel" id="btn-cancel">Cancel run</button>
+    </div>
+
+    <div class="feed" id="feed" style="display:none"></div>
+
+    <div id="run-results" style="display:none">
+      <div class="metric-row" id="metrics"></div>
+      <div class="section-title">Category Breakdown</div>
+      <table class="data-table" id="cat-table">
+        <thead>
+          <tr>
+            <th data-sort="name">Category</th>
+            <th>Tiers</th>
+            <th data-sort="score">Score</th>
+            <th data-sort="correct">Correct</th>
+          </tr>
+        </thead>
+        <tbody id="cat-tbody"></tbody>
+      </table>
+      <div class="section-title">Cliff Index</div>
+      <svg class="cliff-svg" id="cliff-svg" viewBox="0 0 600 160"></svg>
+      <div class="export-row">
+        <button class="btn-export" data-export="json">Copy JSON</button>
+        <button class="btn-export" data-export="markdown">Copy Markdown</button>
+        <button class="btn-export" data-export="cli">Copy CLI command</button>
+        <button class="btn btn-primary btn-sm" id="btn-save-snapshot">Save snapshot</button>
+      </div>
     </div>
   </div>
 
-  <!-- ─── Right Panel ─── -->
-  <div class="panel-right">
-    <!-- Empty state -->
-    <div class="empty-state" id="empty-state">
-      <div class="empty-logo">FORGE</div>
-      <div class="empty-text">Configure a run on the left to begin.</div>
+  <!-- ─── Compare Tab ─── -->
+  <div class="tab-panel" id="tab-compare">
+    <div class="section-title">Multi-Model Comparison</div>
+    <p style="font-size:13px;color:var(--text-secondary);margin-bottom:16px">
+      Run multiple models with the same seed, then compare their results side by side.
+    </p>
+
+    <div style="display:flex;gap:8px;margin-bottom:16px">
+      <button class="btn btn-ghost btn-sm" id="btn-add-model">+ Add current model</button>
+      <button class="btn btn-ghost btn-sm" id="btn-run-all">Run all queued models</button>
+      <button class="btn btn-ghost btn-sm" id="btn-clear-queue">Clear queue</button>
     </div>
 
-    <!-- Live feed -->
-    <div class="feed" id="feed"></div>
+    <div class="model-queue" id="model-queue"></div>
 
-    <!-- Results -->
-    <div class="results" id="results">
-      <div class="metric-row" id="metrics"></div>
-      <div>
-        <div class="section-title">Category Breakdown</div>
-        <table class="cat-table" id="cat-table">
-          <thead>
-            <tr>
-              <th data-sort="name">Category</th>
-              <th>Tiers</th>
-              <th data-sort="score">Score</th>
-              <th data-sort="correct">Correct</th>
-            </tr>
-          </thead>
-          <tbody id="cat-tbody"></tbody>
-        </table>
+    <div id="comparison-results" style="display:none">
+      <div class="section-title">Comparison</div>
+      <div id="comparison-bars"></div>
+      <table class="data-table" id="comparison-table">
+        <thead>
+          <tr>
+            <th>Model</th>
+            <th>FORGE Score</th>
+            <th>Extrapolation</th>
+            <th>Cliff Index</th>
+            <th>Cost</th>
+          </tr>
+        </thead>
+        <tbody id="comparison-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ─── Snapshots Tab ─── -->
+  <div class="tab-panel" id="tab-snapshots">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+      <div class="section-title" style="margin:0">Saved Snapshots</div>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-ghost btn-sm" id="btn-export-all">Export all</button>
+        <button class="btn btn-ghost btn-sm" id="btn-import">Import</button>
+        <input type="file" id="import-file" accept=".json" style="display:none">
       </div>
-      <div class="cliff-chart">
-        <div class="section-title">Cliff Index</div>
-        <svg class="cliff-svg" id="cliff-svg" viewBox="0 0 600 160"></svg>
-      </div>
-      <div class="export-row">
-        <button class="btn-export" data-export="json">Copy results as JSON</button>
-        <button class="btn-export" data-export="markdown">Export Markdown table</button>
-        <button class="btn-export" data-export="cli">Copy CLI command used</button>
-      </div>
+    </div>
+    <p style="font-size:13px;color:var(--text-secondary);margin-bottom:16px">
+      Snapshots are saved in your browser's localStorage. Export to file for backup or sharing.
+    </p>
+    <div class="snapshot-list" id="snapshot-list"></div>
+    <div class="empty-state" id="snapshots-empty">
+      <div class="empty-logo">∅</div>
+      <div class="empty-text">No snapshots saved yet. Run a benchmark and save the result.</div>
     </div>
   </div>
 </div>
 
 <script>
-// ─── Mode configs ───
+// ─── Constants ───
 const MODES = {
   nano: { label: "5 questions · ~30s · <$0.01", categories: ["arithmetic_chain","mod_exp","game_nim","info_entropy","combinatorics_stars"], dist: {3:1}, per: 1 },
   quick: { label: "250 questions · ~5 min · ~$0.10", categories: "all", dist: {3:5, 4:5}, per: 10 },
@@ -748,7 +786,7 @@ const ALL_CATEGORIES = [
   "graph_shortest_path","formal_grammars","quantum_amplitudes","chess_mate","algorithmic_trace"
 ];
 
-const CATEGORY_DISPLAY = {
+const CAT_DISPLAY = {
   arithmetic_chain:"Arithmetic Chain", mod_exp:"Modular Exponentiation", combinatorics_stars:"Combinatorics",
   game_nim:"Nim States", info_entropy:"Shannon Entropy", matrix_det:"Matrix Determinants",
   linear_systems:"Linear Systems", jordan_normal:"Jordan Normal Form", vector_div:"Vector Divergence",
@@ -760,243 +798,227 @@ const CATEGORY_DISPLAY = {
   algorithmic_trace:"Algorithmic Trace"
 };
 
+const MODEL_COLORS = ["#0A1628","#E8A020","#2D8A4E","#C43E3E","#5B6ABF","#8B5CF6"];
+
+// ─── State ───
 let currentMode = "nano";
+let modelQueue = [];
+let comparisonResults = {};
+let currentResult = null;
 let running = false;
 let abortController = null;
 let startTime = 0;
 let timerInterval = null;
 
-// ─── Mode pills ───
-document.querySelectorAll(".mode-pill").forEach(btn => {
-  btn.addEventListener("click", () => {
-    document.querySelectorAll(".mode-pill").forEach(b => b.classList.remove("active"));
-    btn.classList.add("active");
-    currentMode = btn.dataset.mode;
-    document.getElementById("mode-info").textContent = MODES[currentMode].label;
+// ─── Init ───
+document.addEventListener("DOMContentLoaded", () => {
+  checkBackend();
+  loadSnapshots();
+  setupEventListeners();
+});
+
+// ─── Backend check ───
+async function checkBackend() {
+  const banner = document.getElementById("backend-banner");
+  const msg = document.getElementById("backend-msg");
+
+  banner.className = "backend-banner checking";
+  msg.innerHTML = "Checking for local FORGE backend at localhost:7860...";
+
+  try {
+    const res = await fetch("http://localhost:7860/api/test", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ model: "test", api_base: "https://openrouter.ai/api/v1", api_key: "test" }),
+      signal: AbortSignal.timeout(5000),
+    });
+
+    if (res.ok) {
+      banner.className = "backend-banner online";
+      msg.innerHTML = "✓ Backend connected — FORGE is ready to run.";
+    } else {
+      throw new Error("not ok");
+    }
+  } catch {
+    banner.className = "backend-banner offline";
+    msg.innerHTML = '✗ Backend not detected. Run <code>python -m forge.server</code> locally, then refresh this page. Without the backend, you can still view saved snapshots and compare past runs.';
+  }
+}
+
+// ─── Event listeners ───
+function setupEventListeners() {
+  // Tabs
+  document.querySelectorAll(".tab").forEach(tab => {
+    tab.addEventListener("click", () => {
+      document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
+      document.querySelectorAll(".tab-panel").forEach(p => p.classList.remove("active"));
+      tab.classList.add("active");
+      document.getElementById("tab-" + tab.dataset.tab).classList.add("active");
+    });
   });
-});
 
-// ─── Password toggle ───
-document.getElementById("toggle-key").addEventListener("click", () => {
-  const input = document.getElementById("api-key");
-  input.type = input.type === "password" ? "text" : "password";
-});
+  // Mode pills
+  document.querySelectorAll(".mode-pill").forEach(btn => {
+    btn.addEventListener("click", () => {
+      document.querySelectorAll(".mode-pill").forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      currentMode = btn.dataset.mode;
+      document.getElementById("mode-info").textContent = MODES[currentMode].label;
+    });
+  });
 
-// ─── Randomize seed ───
-document.getElementById("randomize-seed").addEventListener("click", () => {
-  document.getElementById("seed").value = crypto.getRandomValues(new BigUint64Array(1))[0].toString();
-});
+  // Seed randomize
+  document.getElementById("randomize-seed").addEventListener("click", () => {
+    document.getElementById("seed").value = crypto.getRandomValues(new BigUint64Array(1))[0].toString();
+  });
 
-// ─── Run ───
-document.getElementById("btn-run").addEventListener("click", startRun);
-document.getElementById("btn-cancel").addEventListener("click", cancelRun);
+  // Run
+  document.getElementById("btn-run").addEventListener("click", runSingle);
 
-async function startRun() {
-  // Validate
-  let valid = true;
-  const modelName = document.getElementById("model-name").value.trim();
-  const apiKey = document.getElementById("api-key").value.trim();
+  // Model queue
+  document.getElementById("btn-add-model").addEventListener("click", addCurrentModel);
+  document.getElementById("btn-run-all").addEventListener("click", runAllModels);
+  document.getElementById("btn-clear-queue").addEventListener("click", () => { modelQueue = []; renderQueue(); });
 
-  if (!modelName) { showFieldError("model-error", "model-name"); valid = false; }
-  else { hideFieldError("model-error", "model-name"); }
+  // Snapshots
+  document.getElementById("btn-save-snapshot").addEventListener("click", saveSnapshot);
+  document.getElementById("btn-export-all").addEventListener("click", exportAllSnapshots);
+  document.getElementById("btn-import").addEventListener("click", () => document.getElementById("import-file").click());
+  document.getElementById("import-file").addEventListener("change", importSnapshots);
 
-  if (!apiKey) { showFieldError("key-error", "api-key"); valid = false; }
-  else { hideFieldError("key-error", "api-key"); }
+  // Export buttons
+  document.querySelectorAll(".btn-export").forEach(btn => {
+    btn.addEventListener("click", () => exportResult(btn.dataset.export, btn));
+  });
+}
 
-  if (!valid) return;
+// ─── Run single model ───
+async function runSingle() {
+  const config = getConfig();
+  if (!config) return;
 
   running = true;
   const btn = document.getElementById("btn-run");
-  btn.classList.add("loading");
   btn.disabled = true;
+  btn.textContent = "Running...";
 
-  // Show progress
-  const progress = document.getElementById("progress");
-  progress.classList.add("active");
-
-  // Show feed, hide empty/results
-  document.getElementById("empty-state").style.display = "none";
-  document.getElementById("results").classList.remove("active");
-  const feed = document.getElementById("feed");
-  feed.classList.add("active");
-  feed.innerHTML = "";
+  document.getElementById("run-progress").style.display = "block";
+  document.getElementById("feed").style.display = "block";
+  document.getElementById("feed").innerHTML = "";
+  document.getElementById("run-results").style.display = "none";
 
   abortController = new AbortController();
   startTime = Date.now();
   timerInterval = setInterval(updateTimer, 1000);
 
-  const config = {
-    model: modelName,
-    api_base: document.getElementById("api-base").value.trim(),
-    api_key: apiKey,
-    seed: parseInt(document.getElementById("seed").value) || 42,
-    mode: currentMode,
-    input_cost: parseFloat(document.getElementById("cost-in").value) || 0,
-    output_cost: parseFloat(document.getElementById("cost-out").value) || 0,
-  };
-
   try {
-    const result = await runEvaluation(config);
-    showResults(result, config);
+    const result = await executeRun(config);
+    currentResult = { ...result, config, timestamp: new Date().toISOString() };
+    showResults(currentResult);
   } catch (err) {
     if (err.name !== "AbortError") {
-      addFeedItem("system", 0, "error", `Error: ${err.message}`, 0);
+      addFeedItem("error", 0, false, err.message, 0);
     }
   } finally {
     running = false;
-    btn.classList.remove("loading");
     btn.disabled = false;
-    progress.classList.remove("active");
+    btn.textContent = "Run FORGE";
     clearInterval(timerInterval);
   }
 }
 
-function cancelRun() {
-  if (abortController) abortController.abort();
-}
+// ─── Execute run via backend ───
+async function executeRun(config) {
+  const response = await fetch("http://localhost:7860/api/run", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(config),
+    signal: abortController.signal,
+  });
 
-function showFieldError(id, inputId) {
-  document.getElementById(id).classList.add("visible");
-  document.getElementById(inputId).classList.add("error");
-}
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({ detail: response.statusText }));
+    throw new Error(err.detail || err.error || "API error");
+  }
 
-function hideFieldError(id, inputId) {
-  document.getElementById(id).classList.remove("visible");
-  document.getElementById(inputId).classList.remove("error");
-}
-
-function updateTimer() {
-  const elapsed = ((Date.now() - startTime) / 1000).toFixed(0);
-  document.getElementById("progress-time").textContent = `Elapsed: ${elapsed}s`;
-}
-
-// ─── Run evaluation via backend ───
-async function runEvaluation(config) {
-  const mode = MODES[config.mode];
-  const categories = mode.categories === "all" ? ALL_CATEGORIES : mode.categories;
-  const totalQuestions = categories.length * Object.values(mode.dist).reduce((a, b) => a + b, 0);
-
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = "";
   let completed = 0;
-  const results = [];
 
-  document.getElementById("progress-label").textContent = `0 / ${totalQuestions} questions`;
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
 
-  // Try SSE first, fall back to polling
-  try {
-    const response = await fetch("http://localhost:7860/api/run", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(config),
-      signal: abortController.signal,
-    });
+    buffer += decoder.decode(value, { stream: true });
+    const lines = buffer.split("\n");
+    buffer = lines.pop();
 
-    if (!response.ok) {
-      const err = await response.json().catch(() => ({ detail: response.statusText }));
-      throw new Error(err.detail || err.error || "API error");
-    }
+    for (const line of lines) {
+      if (!line.startsWith("data: ")) continue;
+      const data = JSON.parse(line.slice(6));
 
-    const reader = response.body.getReader();
-    const decoder = new TextDecoder();
-    let buffer = "";
+      if (data.type === "start") {
+        document.getElementById("progress-text").textContent = `0 / ${data.total} questions`;
+      }
 
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
+      if (data.type === "progress") {
+        completed++;
+        const pct = (completed / data.total * 100).toFixed(0);
+        document.getElementById("progress-fill").style.width = pct + "%";
+        document.getElementById("progress-text").textContent = `${completed} / ${data.total} — ${data.category}`;
+        addFeedItem(data.category, data.difficulty, data.correct, data.correct ? "✓" : "✗", data.elapsed);
+      }
 
-      buffer += decoder.decode(value, { stream: true });
-      const lines = buffer.split("\n");
-      buffer = lines.pop();
+      if (data.type === "result") {
+        return data;
+      }
 
-      for (const line of lines) {
-        if (!line.startsWith("data: ")) continue;
-        const data = JSON.parse(line.slice(6));
-
-        if (data.type === "progress") {
-          completed++;
-          const pct = (completed / totalQuestions * 100).toFixed(0);
-          document.getElementById("progress-fill").style.width = pct + "%";
-          document.getElementById("progress-label").textContent = `${completed} / ${totalQuestions} questions`;
-          document.getElementById("progress-detail").textContent = `${data.category} · difficulty ${data.difficulty}`;
-
-          addFeedItem(
-            data.category,
-            data.difficulty,
-            data.correct ? "correct" : "wrong",
-            data.correct ? "✓" : "✗",
-            data.elapsed
-          );
-        }
-
-        if (data.type === "result") {
-          return data;
-        }
+      if (data.type === "error") {
+        throw new Error(data.message);
       }
     }
-  } catch (fetchErr) {
-    // If backend not available, show error
-    if (fetchErr.message.includes("Failed to fetch") || fetchErr.message.includes("NetworkError")) {
-      throw new Error("Cannot connect to FORGE backend. Make sure it's running: python -m forge.ui");
-    }
-    throw fetchErr;
   }
 }
 
-// ─── Feed ───
-function addFeedItem(cat, diff, type, status, time) {
-  const feed = document.getElementById("feed");
-  const item = document.createElement("div");
-  item.className = `feed-item ${type}`;
-  item.innerHTML = `
-    <span class="feed-cat">${CATEGORY_DISPLAY[cat] || cat}</span>
-    <span class="feed-diff">d${diff}</span>
-    <span class="feed-status ${type === "correct" ? "ok" : type === "wrong" ? "fail" : "err"}">${status}</span>
-    <span class="feed-time">${time ? time.toFixed(1) + "s" : ""}</span>
-  `;
-  feed.appendChild(item);
-  feed.scrollTop = feed.scrollHeight;
-}
+// ─── Show results ───
+function showResults(result) {
+  document.getElementById("run-results").style.display = "block";
 
-// ─── Results ───
-function showResults(data, config) {
-  document.getElementById("feed").classList.remove("active");
-  const results = document.getElementById("results");
-  results.classList.add("active");
-
-  // Metrics
   const metrics = document.getElementById("metrics");
-  const cliffLabel = data.cliff_index ? `Tier ${data.cliff_index}` : "No cliff";
+  const cliffLabel = result.cliff_index ? `Tier ${result.cliff_index}` : "No cliff";
   metrics.innerHTML = `
     <div class="metric-card">
-      <span class="metric-label">Global FORGE Score</span>
-      <span class="metric-value" data-count="${data.forge_score}">0</span>
+      <div class="metric-label">FORGE Score</div>
+      <div class="metric-value" data-count="${result.forge_score}">0</div>
     </div>
     <div class="metric-card">
-      <span class="metric-label">Extrapolation Score</span>
-      <span class="metric-value" data-count="${data.extrapolation_score}">0</span>
+      <div class="metric-label">Extrapolation</div>
+      <div class="metric-value" data-count="${result.extrapolation_score}">0</div>
     </div>
     <div class="metric-card">
-      <span class="metric-label">Cliff Index</span>
-      <span class="metric-value amber">${cliffLabel}</span>
+      <div class="metric-label">Cliff Index</div>
+      <div class="metric-value amber">${cliffLabel}</div>
     </div>
     <div class="metric-card">
-      <span class="metric-label">Estimated Cost</span>
-      <span class="metric-value" data-count="${data.cost || 0}" data-prefix="$" data-decimals="2">$0</span>
-      <span class="metric-sub">${data.total_questions || 0} questions</span>
+      <div class="metric-label">Cost</div>
+      <div class="metric-value" data-count="${result.cost || 0}" data-prefix="$" data-decimals="2">$0</div>
+      <div class="metric-sub">${result.total_questions} questions</div>
     </div>
   `;
 
-  // Count-up animation
+  // Count-up
   document.querySelectorAll("[data-count]").forEach(el => {
     const target = parseFloat(el.dataset.count);
     const prefix = el.dataset.prefix || "";
-    const decimals = parseInt(el.dataset.decimals || "4");
-    animateCount(el, target, prefix, decimals);
+    const dec = parseInt(el.dataset.decimals || "4");
+    animateCount(el, target, prefix, dec);
   });
 
   // Category table
   const tbody = document.getElementById("cat-tbody");
   tbody.innerHTML = "";
-  const cats = data.categories || [];
+  const cats = result.categories || [];
   const sorted = [...cats].sort((a, b) => b.score - a.score);
 
   sorted.forEach(cat => {
@@ -1005,30 +1027,22 @@ function showResults(data, config) {
       const t = cat.tiers?.[d];
       return `<div class="tier-sq ${t && t.correct > 0 ? "pass" : ""}" title="Tier ${d}: ${t ? t.correct + "/" + t.total : "N/A"}"></div>`;
     }).join("");
-
-    tr.innerHTML = `
-      <td>${CATEGORY_DISPLAY[cat.name] || cat.name}</td>
-      <td><div class="tier-squares">${tiers}</div></td>
-      <td>${(cat.score * 100).toFixed(0)}%</td>
-      <td>${cat.correct}/${cat.total}</td>
-    `;
+    tr.innerHTML = `<td>${CAT_DISPLAY[cat.name] || cat.name}</td><td><div class="tier-squares">${tiers}</div></td><td>${(cat.score * 100).toFixed(0)}%</td><td>${cat.correct}/${cat.total}</td>`;
     tbody.appendChild(tr);
   });
 
   // Cliff chart
-  drawCliffChart(data);
+  drawCliffChart(result);
 }
 
-function animateCount(el, target, prefix, decimals) {
-  const duration = 800;
-  const start = Date.now();
+// ─── Animate count ───
+function animateCount(el, target, prefix, dec) {
+  const dur = 800, start = Date.now();
   const step = () => {
-    const elapsed = Date.now() - start;
-    const progress = Math.min(elapsed / duration, 1);
-    const eased = 1 - Math.pow(1 - progress, 3);
-    const current = target * eased;
-    el.textContent = prefix + current.toFixed(decimals);
-    if (progress < 1) requestAnimationFrame(step);
+    const p = Math.min((Date.now() - start) / dur, 1);
+    const eased = 1 - Math.pow(1 - p, 3);
+    el.textContent = prefix + (target * eased).toFixed(dec);
+    if (p < 1) requestAnimationFrame(step);
   };
   requestAnimationFrame(step);
 }
@@ -1037,10 +1051,8 @@ function animateCount(el, target, prefix, decimals) {
 function drawCliffChart(data) {
   const svg = document.getElementById("cliff-svg");
   const cats = data.categories || [];
+  const tierAcc = {}, tierCount = {};
 
-  // Compute average accuracy per tier
-  const tierAcc = {};
-  const tierCount = {};
   cats.forEach(cat => {
     if (cat.tiers) {
       Object.entries(cat.tiers).forEach(([d, t]) => {
@@ -1053,97 +1065,296 @@ function drawCliffChart(data) {
 
   const points = [];
   for (let d = 1; d <= 5; d++) {
-    if (tierCount[d]) {
-      points.push({ tier: d, accuracy: tierAcc[d] / tierCount[d] });
-    }
+    if (tierCount[d]) points.push({ tier: d, accuracy: tierAcc[d] / tierCount[d] });
   }
 
   if (points.length < 2) {
-    svg.innerHTML = '<text x="300" y="80" text-anchor="middle" class="axis-label">Not enough data for cliff chart</text>';
+    svg.innerHTML = '<text x="300" y="80" text-anchor="middle" class="axis-label">Not enough data</text>';
     return;
   }
 
   const pad = { top: 20, right: 40, bottom: 30, left: 50 };
-  const w = 600 - pad.left - pad.right;
-  const h = 160 - pad.top - pad.bottom;
-
-  const xScale = (tier) => pad.left + ((tier - 1) / 4) * w;
-  const yScale = (acc) => pad.top + (1 - acc) * h;
+  const w = 600 - pad.left - pad.right, h = 160 - pad.top - pad.bottom;
+  const xS = t => pad.left + ((t - 1) / 4) * w;
+  const yS = a => pad.top + (1 - a) * h;
 
   let html = "";
-
-  // Grid lines
   for (let i = 0; i <= 4; i++) {
     const y = pad.top + (i / 4) * h;
     html += `<line x1="${pad.left}" y1="${y}" x2="${600 - pad.right}" y2="${y}" stroke="#E5E5E5" stroke-width="0.5"/>`;
     html += `<text x="${pad.left - 8}" y="${y + 4}" text-anchor="end" class="axis-label">${((1 - i / 4) * 100).toFixed(0)}%</text>`;
   }
+  for (let d = 1; d <= 5; d++) html += `<text x="${xS(d)}" y="${160 - 4}" text-anchor="middle" class="axis-label">Tier ${d}</text>`;
 
-  // X axis labels
-  for (let d = 1; d <= 5; d++) {
-    html += `<text x="${xScale(d)}" y="${160 - 4}" text-anchor="middle" class="axis-label">Tier ${d}</text>`;
-  }
-
-  // Cliff zones
   for (let i = 1; i < points.length; i++) {
-    const drop = points[i - 1].accuracy - points[i].accuracy;
-    if (drop > 0.3) {
-      const x1 = xScale(points[i].tier);
+    if (points[i - 1].accuracy - points[i].accuracy > 0.3) {
+      const x1 = xS(points[i].tier);
       html += `<line x1="${x1}" y1="${pad.top}" x2="${x1}" y2="${pad.top + h}" class="cliff-marker"/>`;
-      html += `<rect x="${x1 - 20}" y="${yScale(points[i - 1].accuracy) - 18}" width="80" height="16" fill="var(--amber)" opacity="0.1" rx="2"/>`;
-      html += `<text x="${x1 + 2}" y="${yScale(points[i - 1].accuracy) - 7}" class="cliff-label">cliff detected</text>`;
+      html += `<text x="${x1 + 4}" y="${yS(points[i - 1].accuracy) - 7}" class="cliff-label">cliff detected</text>`;
     }
   }
 
-  // Line
-  const pathD = points.map((p, i) => `${i === 0 ? "M" : "L"}${xScale(p.tier)},${yScale(p.accuracy)}`).join(" ");
+  const pathD = points.map((p, i) => `${i === 0 ? "M" : "L"}${xS(p.tier)},${yS(p.accuracy)}`).join(" ");
   html += `<path d="${pathD}" class="cliff-line"/>`;
-
-  // Dots
-  points.forEach(p => {
-    html += `<circle cx="${xScale(p.tier)}" cy="${yScale(p.accuracy)}" r="4" class="cliff-dot"/>`;
-  });
+  points.forEach(p => html += `<circle cx="${xS(p.tier)}" cy="${yS(p.accuracy)}" r="4" class="cliff-dot"/>`);
 
   svg.innerHTML = html;
 }
 
-// ─── Export ───
-document.querySelectorAll(".btn-export").forEach(btn => {
-  btn.addEventListener("click", () => {
-    const type = btn.dataset.export;
-    let text = "";
+// ─── Feed ───
+function addFeedItem(cat, diff, correct, status, time) {
+  const feed = document.getElementById("feed");
+  const item = document.createElement("div");
+  item.className = `feed-item ${correct ? "correct" : "wrong"}`;
+  item.innerHTML = `
+    <span class="feed-cat">${CAT_DISPLAY[cat] || cat}</span>
+    <span class="feed-status ${correct ? "ok" : "fail"}">${status}</span>
+    <span class="feed-time">${time ? time.toFixed(1) + "s" : ""}</span>
+  `;
+  feed.appendChild(item);
+  feed.scrollTop = feed.scrollHeight;
+}
 
-    if (type === "json") {
-      text = JSON.stringify(window._lastResult || {}, null, 2);
-    } else if (type === "markdown") {
-      text = "| Category | Score | Correct | Total |\n|---|---|---|---|\n";
-      (window._lastResult?.categories || []).forEach(c => {
-        text += `| ${CATEGORY_DISPLAY[c.name] || c.name} | ${(c.score * 100).toFixed(0)}% | ${c.correct} | ${c.total} |\n`;
-      });
-    } else if (type === "cli") {
-      const c = window._lastConfig || {};
-      text = `python -m forge.cli run --mode ${c.mode || "quick"} --model ${c.model || "?"} --api-base ${c.api_base || "?"} --api-key YOUR_KEY --seed ${c.seed || 42}`;
-    }
+// ─── Timer ───
+function updateTimer() {
+  document.getElementById("progress-time").textContent = `Elapsed: ${((Date.now() - startTime) / 1000).toFixed(0)}s`;
+}
 
-    navigator.clipboard.writeText(text).then(() => {
-      btn.textContent = "Copied";
-      btn.classList.add("copied");
-      setTimeout(() => {
-        btn.textContent = btn.dataset.export === "json" ? "Copy results as JSON" :
-                          btn.dataset.export === "markdown" ? "Export Markdown table" : "Copy CLI command used";
-        btn.classList.remove("copied");
-      }, 1500);
+// ─── Config ───
+function getConfig() {
+  const model = document.getElementById("model-name").value.trim();
+  const apiKey = document.getElementById("api-key").value.trim();
+
+  if (!model) { alert("Model name is required"); return null; }
+  if (!apiKey) { alert("API key is required"); return null; }
+
+  return {
+    model,
+    api_base: document.getElementById("api-base").value.trim(),
+    api_key: apiKey,
+    seed: parseInt(document.getElementById("seed").value) || 42,
+    mode: currentMode,
+    input_cost: parseFloat(document.getElementById("cost-in").value) || 0,
+    output_cost: parseFloat(document.getElementById("cost-out").value) || 0,
+  };
+}
+
+// ─── Model queue ───
+function addCurrentModel() {
+  const config = getConfig();
+  if (!config) return;
+
+  if (modelQueue.find(m => m.model === config.model)) {
+    alert("Model already in queue");
+    return;
+  }
+
+  modelQueue.push(config);
+  renderQueue();
+}
+
+function renderQueue() {
+  const container = document.getElementById("model-queue");
+  container.innerHTML = modelQueue.map((m, i) => `
+    <div class="queue-item">
+      <div>
+        <span class="queue-name">${m.model}</span>
+        <span class="queue-base">${m.api_base}</span>
+      </div>
+      <button class="queue-remove" data-idx="${i}">✕</button>
+    </div>
+  `).join("");
+
+  container.querySelectorAll(".queue-remove").forEach(btn => {
+    btn.addEventListener("click", () => {
+      modelQueue.splice(parseInt(btn.dataset.idx), 1);
+      renderQueue();
     });
   });
-});
+}
 
-// Store last result for export
-const origShowResults = showResults;
-showResults = function(data, config) {
-  window._lastResult = data;
-  window._lastConfig = config;
-  origShowResults(data, config);
-};
+async function runAllModels() {
+  if (modelQueue.length === 0) { alert("Add models to the queue first"); return; }
+
+  comparisonResults = {};
+  const seed = parseInt(document.getElementById("seed").value) || 42;
+
+  for (let i = 0; i < modelQueue.length; i++) {
+    const config = modelQueue[i];
+    config.seed = seed;
+
+    document.getElementById("progress-text").textContent = `Running model ${i + 1}/${modelQueue.length}: ${config.model}`;
+
+    try {
+      abortController = new AbortController();
+      const result = await executeRun(config);
+      comparisonResults[config.model] = { ...result, config, timestamp: new Date().toISOString() };
+    } catch (err) {
+      console.error(`Failed: ${config.model}`, err);
+    }
+  }
+
+  showComparison();
+}
+
+// ─── Comparison ───
+function showComparison() {
+  const container = document.getElementById("comparison-results");
+  container.style.display = "block";
+
+  const models = Object.entries(comparisonResults).sort((a, b) => b[1].forge_score - a[1].forge_score);
+
+  // Bars
+  const bars = document.getElementById("comparison-bars");
+  bars.innerHTML = models.map(([name, data], i) => {
+    const color = MODEL_COLORS[i % MODEL_COLORS.length];
+    return `
+      <div class="comparison-bar">
+        <span class="comparison-label">${name}</span>
+        <div class="comparison-track">
+          <div class="comparison-fill" style="width:${data.forge_score * 100}%;background:${color}"></div>
+        </div>
+        <span class="comparison-value">${(data.forge_score * 100).toFixed(1)}%</span>
+      </div>
+    `;
+  }).join("");
+
+  // Table
+  const tbody = document.getElementById("comparison-tbody");
+  tbody.innerHTML = models.map(([name, data]) => `
+    <tr>
+      <td>${name}</td>
+      <td>${data.forge_score.toFixed(4)}</td>
+      <td>${data.extrapolation_score.toFixed(4)}</td>
+      <td>${data.cliff_index ? "Tier " + data.cliff_index : "—"}</td>
+      <td>$${(data.cost || 0).toFixed(2)}</td>
+    </tr>
+  `).join("");
+}
+
+// ─── Snapshots ───
+function getSnapshots() {
+  try { return JSON.parse(localStorage.getItem("forge_snapshots") || "[]"); }
+  catch { return []; }
+}
+
+function loadSnapshots() {
+  const snapshots = getSnapshots();
+  const list = document.getElementById("snapshot-list");
+  const empty = document.getElementById("snapshots-empty");
+
+  if (snapshots.length === 0) {
+    list.innerHTML = "";
+    empty.style.display = "block";
+    return;
+  }
+
+  empty.style.display = "none";
+  list.innerHTML = snapshots.map((s, i) => `
+    <div class="snapshot-item">
+      <div class="snapshot-info">
+        <span class="snapshot-name">${s.config?.model || "Unknown"} — ${s.config?.mode || "?"}</span>
+        <span class="snapshot-meta">${s.timestamp} · seed ${s.config?.seed} · score ${(s.forge_score * 100).toFixed(1)}%</span>
+      </div>
+      <div class="snapshot-actions">
+        <button class="btn btn-ghost btn-sm" data-action="load" data-idx="${i}">Load</button>
+        <button class="btn btn-ghost btn-sm" data-action="delete" data-idx="${i}">Delete</button>
+      </div>
+    </div>
+  `).join("");
+
+  list.querySelectorAll("[data-action]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const idx = parseInt(btn.dataset.idx);
+      if (btn.dataset.action === "load") {
+        currentResult = snapshots[idx];
+        showResults(currentResult);
+        document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
+        document.querySelectorAll(".tab-panel").forEach(p => p.classList.remove("active"));
+        document.querySelector('[data-tab="run"]').classList.add("active");
+        document.getElementById("tab-run").classList.add("active");
+      }
+      if (btn.dataset.action === "delete") {
+        const snapshots = getSnapshots();
+        snapshots.splice(idx, 1);
+        localStorage.setItem("forge_snapshots", JSON.stringify(snapshots));
+        loadSnapshots();
+      }
+    });
+  });
+}
+
+function saveSnapshot() {
+  if (!currentResult) { alert("No result to save"); return; }
+
+  const snapshots = getSnapshots();
+  snapshots.push(currentResult);
+  localStorage.setItem("forge_snapshots", JSON.stringify(snapshots));
+  loadSnapshots();
+
+  const btn = document.getElementById("btn-save-snapshot");
+  btn.textContent = "Saved ✓";
+  setTimeout(() => btn.textContent = "Save snapshot", 1500);
+}
+
+function exportAllSnapshots() {
+  const snapshots = getSnapshots();
+  const blob = new Blob([JSON.stringify(snapshots, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `forge-snapshots-${new Date().toISOString().slice(0, 10)}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function importSnapshots(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = () => {
+    try {
+      const imported = JSON.parse(reader.result);
+      const existing = getSnapshots();
+      const merged = [...existing, ...imported];
+      localStorage.setItem("forge_snapshots", JSON.stringify(merged));
+      loadSnapshots();
+      alert(`Imported ${imported.length} snapshots`);
+    } catch {
+      alert("Invalid file");
+    }
+  };
+  reader.readAsText(file);
+  e.target.value = "";
+}
+
+// ─── Export result ───
+function exportResult(type, btn) {
+  if (!currentResult) { alert("No result to export"); return; }
+
+  let text = "";
+  if (type === "json") text = JSON.stringify(currentResult, null, 2);
+  if (type === "markdown") {
+    text = `| Category | Score | Correct | Total |\n|---|---|---|---|\n`;
+    (currentResult.categories || []).forEach(c => {
+      text += `| ${CAT_DISPLAY[c.name] || c.name} | ${(c.score * 100).toFixed(0)}% | ${c.correct} | ${c.total} |\n`;
+    });
+  }
+  if (type === "cli") {
+    const c = currentResult.config || {};
+    text = `python -m forge.cli run --mode ${c.mode || "quick"} --model ${c.model || "?"} --api-base ${c.api_base || "?"} --api-key YOUR_KEY --seed ${c.seed || 42}`;
+  }
+
+  navigator.clipboard.writeText(text).then(() => {
+    btn.textContent = "Copied ✓";
+    btn.classList.add("copied");
+    setTimeout(() => {
+      btn.textContent = type === "json" ? "Copy JSON" : type === "markdown" ? "Copy Markdown" : "Copy CLI command";
+      btn.classList.remove("copied");
+    }, 1500);
+  });
+}
 </script>
 
 </body>
