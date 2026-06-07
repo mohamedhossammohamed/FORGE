@@ -202,12 +202,14 @@ async def run_evaluation(req: RunRequest):
                 cliff_indices = [r.cliff_index for r in category_results if r.cliff_index is not None]
                 global_cliff = min(cliff_indices) if cliff_indices else None
                 cost = runner.compute_cost()
+                ci = ForgeRunner.compute_confidence_interval(category_results)
 
                 categories_data = []
                 for r in category_results:
                     tiers = {}
                     for d, stats in r.accuracy_by_difficulty.items():
                         tiers[str(d)] = {"correct": stats["correct"], "total": stats["total"]}
+                    cat_ci = ci["categories"].get(r.name, {})
                     categories_data.append({
                         "name": r.name,
                         "display_name": r.display_name,
@@ -216,17 +218,23 @@ async def run_evaluation(req: RunRequest):
                         "total": r.total_questions,
                         "cliff": r.cliff_index,
                         "tiers": tiers,
+                        "ci_lower": cat_ci.get("ci_lower", r.category_score),
+                        "ci_upper": cat_ci.get("ci_upper", r.category_score),
                     })
 
                 final = {
                     "type": "result",
                     "forge_score": forge_score,
+                    "forge_ci_lower": ci["ci_lower"],
+                    "forge_ci_upper": ci["ci_upper"],
+                    "forge_margin": ci["margin"],
                     "interpolation_score": interp,
                     "extrapolation_score": extra,
                     "cliff_index": global_cliff,
                     "cost": cost,
                     "elapsed": elapsed,
                     "total_questions": completed,
+                    "seed": req.seed,
                     "categories": categories_data,
                 }
                 yield f"data: {json.dumps(final)}\n\n"
