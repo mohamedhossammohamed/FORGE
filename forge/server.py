@@ -8,12 +8,10 @@ for running evaluations with real-time progress via SSE.
 import asyncio
 import json
 import time
-import secrets
 from pathlib import Path
 
-from fastapi import FastAPI, Request
-from fastapi.responses import StreamingResponse, HTMLResponse, JSONResponse, FileResponse
-from fastapi.staticfiles import StaticFiles
+from fastapi import FastAPI
+from fastapi.responses import StreamingResponse, HTMLResponse, FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import Optional
@@ -23,7 +21,6 @@ from .categories import CATEGORIES, CATEGORY_NAMES
 
 app = FastAPI(title="FORGE API")
 
-# CORS for local development
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -31,7 +28,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Serve static files
 STATIC_DIR = Path(__file__).parent.parent
 
 
@@ -47,7 +43,6 @@ class RunRequest(BaseModel):
 
 
 def get_mode_config(mode: str, categories_str: str = None):
-    """Get run configuration for a mode."""
     if categories_str and categories_str != "all":
         category_list = [c.strip() for c in categories_str.split(",")]
     else:
@@ -55,7 +50,8 @@ def get_mode_config(mode: str, categories_str: str = None):
 
     configs = {
         "nano": RunConfig(
-            mode="nano", seed=42, categories=["arithmetic_chain", "mod_exp", "game_nim", "info_entropy", "combinatorics_stars"],
+            mode="nano", seed=42,
+            categories=["arithmetic_chain", "mod_exp", "game_nim", "info_entropy", "combinatorics_stars"],
             questions_per_category=1, difficulty_distribution={3: 1},
         ),
         "quick": RunConfig(
@@ -76,13 +72,11 @@ def get_mode_config(mode: str, categories_str: str = None):
 
 @app.get("/", response_class=HTMLResponse)
 async def serve_index():
-    """Serve the leaderboard."""
     return FileResponse(STATIC_DIR / "index.html")
 
 
 @app.get("/researcher.html", response_class=HTMLResponse)
 async def serve_researcher():
-    """Serve the researcher tool."""
     return FileResponse(STATIC_DIR / "researcher.html")
 
 
@@ -101,7 +95,6 @@ async def run_evaluation(req: RunRequest):
     run_config = get_mode_config(req.mode, req.categories)
 
     async def event_stream():
-        # Test connection first
         try:
             async with ForgeRunner(model_config, concurrency=10) as runner:
                 success, msg = await runner.test_connection()
@@ -109,56 +102,83 @@ async def run_evaluation(req: RunRequest):
                     yield f"data: {json.dumps({'type': 'error', 'message': msg})}\n\n"
                     return
 
-                category_list = run_config.categories
-                results = []
-                total_questions = 0
-                completed = 0
+                category_list = [c for c in run_config.categories if c in CATEGORIES]
 
+                # Count total questions
+                total_questions = 0
                 for cat_name in category_list:
-                    if cat_name not in CATEGORIES:
-                        continue
-                    cat_cls = CATEGORIES[cat_name]
-                    category = cat_cls(req.seed)
-                    cat_questions = sum(run_config.difficulty_distribution.values())
-                    total_questions += cat_questions
+                    total_questions += sum(run_config.difficulty_distribution.values())
 
                 yield f"data: {json.dumps({'type': 'start', 'total': total_questions})}\n\n"
 
                 start_time = time.time()
+                completed = 0
+
+                # Results accumulator per category
+                cat_results = {}
+                for cat_name in category_list:
+                    cat_results[cat_name] = {"correct": 0, "total": 0, "by_diff": {}}
 
                 for cat_name in category_list:
-                    if cat_name not in CATEGORIES:
-                        continue
-
                     cat_cls = CATEGORIES[cat_name]
                     category = cat_cls(req.seed)
 
-                    # Run one problem at a time for streaming
                     for diff, count in run_config.difficulty_distribution.items():
+                        if diff not in cat_results[cat_name]["by_diff"]:
+                            cat_results[cat_name]["by_diff"][diff] = {"correct": 0, "total": 0}
+
                         for iteration in range(count):
                             problem = category.generate(diff, iteration)
                             result = await runner.run_single(problem, category)
                             completed += 1
 
-                            yield f"data: {json.dumps({'type': 'progress', 'category': cat_name, 'difficulty': diff, 'correct': result['correct'], 'elapsed': result['elapsed'], 'completed': completed, 'total': total_questions})}\n\n"
+                            # Accumulate results
+                            cat_results[cat_name]["total"] += 1
+                            cat_results[cat_name]["by_diff"][diff]["total"] += 1
+                            if result["correct"]:
+                                cat_results[cat_name]["correct"] += 1
+                                cat_results[cat_name]["by_diff"][diff]["correct"] += 1
 
-                    # Compute category-level result
-                    cat_result = await runner.run_category(category, run_config.difficulty_distribution)
-                    results.append(cat_result)
+                            progress_data = {
+                                "type": "progress",
+                                "category": cat_name,
+                                "difficulty": diff,
+                                "correct": result["correct"],
+                                "elapsed": result["elapsed"],
+                                "completed": completed,
+                                "total": total_questions,
+                            }
+                            yield f"data: {json.dumps(progress_data)}\n\n"
 
                 elapsed = time.time() - start_time
 
-                # Compute final scores
-                forge_score = ForgeRunner.compute_forge_score(results)
-                interp, extra = ForgeRunner.compute_interpolation_extrapolation(results)
-                cliff_indices = [r.cliff_index for r in results if r.cliff_index is not None]
-                global_cliff = min(cliff_indices) if cliff_indices else None
+                # Build category results
+                from .core.runner import CategoryResult
+                category_results = []
+                for cat_name in category_list:
+                    cat_cls = CATEGORIES[cat_name]
+                    cat_instance = cat_cls(req.seed)
+                    cr = cat_results[cat_name]
+                    score = ForgeRunner.compute_category_score(cr["by_diff"])
+                    cliff = ForgeRunner.compute_cliff_index(cr["by_diff"])
+                    category_results.append(CategoryResult(
+                        name=cat_name,
+                        display_name=cat_instance.display_name,
+                        total_questions=cr["total"],
+                        correct=cr["correct"],
+                        accuracy_by_difficulty=cr["by_diff"],
+                        category_score=score,
+                        cliff_index=cliff,
+                    ))
 
+                forge_score = ForgeRunner.compute_forge_score(category_results)
+                interp, extra = ForgeRunner.compute_interpolation_extrapolation(category_results)
+                cliff_indices = [r.cliff_index for r in category_results if r.cliff_index is not None]
+                global_cliff = min(cliff_indices) if cliff_indices else None
                 cost = runner.compute_cost()
 
-                # Build category breakdown with tier data
                 categories_data = []
-                for r in results:
+                for r in category_results:
                     tiers = {}
                     for d, stats in r.accuracy_by_difficulty.items():
                         tiers[str(d)] = {"correct": stats["correct"], "total": stats["total"]}
@@ -183,7 +203,6 @@ async def run_evaluation(req: RunRequest):
                     "total_questions": completed,
                     "categories": categories_data,
                 }
-
                 yield f"data: {json.dumps(final)}\n\n"
 
         except Exception as e:
@@ -194,13 +213,11 @@ async def run_evaluation(req: RunRequest):
 
 @app.post("/api/test")
 async def test_connection(req: RunRequest):
-    """Test API connection."""
     model_config = ModelConfig(
         name=req.model,
         api_base=req.api_base,
         api_key=req.api_key,
     )
-
     try:
         async with ForgeRunner(model_config) as runner:
             success, msg = await runner.test_connection()
@@ -210,7 +227,6 @@ async def test_connection(req: RunRequest):
 
 
 def main():
-    """Run the server."""
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=7860, log_level="info")
 
