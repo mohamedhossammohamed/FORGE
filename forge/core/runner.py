@@ -234,9 +234,13 @@ class ForgeRunner:
                     "content": (
                         "You are a precise mathematical reasoning engine. "
                         "Solve the given problem step by step. "
-                        "Provide your final answer after 'ANSWER:'. "
-                        "The answer should be a single value (number, expression, or short phrase) "
-                        "that can be computationally verified."
+                        "Provide your final answer after 'ANSWER:' on its own line. "
+                        "The answer MUST be a plain number, fraction (like 3/7), or short phrase. "
+                        "Do NOT use LaTeX, dollar signs, \\frac, braces, or any formatting in your answer. "
+                        "Example correct format:\n"
+                        "ANSWER: 42\n"
+                        "ANSWER: -193/15\n"
+                        "ANSWER: Losing position"
                     ),
                 },
                 {"role": "user", "content": prompt},
@@ -343,18 +347,35 @@ class ForgeRunner:
         if not response or response.startswith("["):
             return response
         
+        import re as _re
+
+        def _clean_answer(raw: str) -> str:
+            """Strip LaTeX delimiters and common wrappers from an answer string."""
+            s = raw.strip()
+            # Strip markdown/LaTeX math delimiters
+            s = _re.sub(r'^\$\$?\s*', '', s)
+            s = _re.sub(r'\s*\$\$?$', '', s)
+            s = _re.sub(r'^\\\(\s*', '', s)
+            s = _re.sub(r'\s*\\\)$', '', s)
+            s = _re.sub(r'^\\\[\s*', '', s)
+            s = _re.sub(r'\s*\\\]$', '', s)
+            # \frac{a}{b} -> a/b
+            s = _re.sub(r'\\frac\{([^}]*)\}\{([^}]*)\}', r'\1/\2', s)
+            # \text{...} -> ...
+            s = _re.sub(r'\\text\{([^}]*)\}', r'\1', s)
+            # Remaining \cmd and braces
+            s = _re.sub(r'^[}\s\\]+', '', s)
+            s = _re.sub(r'[}\s\\]+$', '', s)
+            s = s.strip()
+            return s
+
         # Look for ANSWER: marker
         lines = response.split('\n')
         for line in reversed(lines):
             if 'ANSWER:' in line:
                 answer = line.split('ANSWER:', 1)[1].strip()
                 if answer:
-                    # Clean up LaTeX artifacts
-                    import re as _re
-                    answer = _re.sub(r'^[}\s\\]+', '', answer)  # Remove leading }, \, whitespace
-                    answer = _re.sub(r'[}\s\\]+$', '', answer)  # Remove trailing }, \, whitespace
-                    answer = _re.sub(r'\\[a-zA-Z]+\{([^}]*)\}', r'\1', answer)  # \cmd{x} -> x
-                    answer = answer.strip()
+                    answer = _clean_answer(answer)
                     if answer:
                         return answer
         
@@ -362,7 +383,7 @@ class ForgeRunner:
         for line in reversed(lines):
             stripped = line.strip()
             if stripped and not stripped.startswith('#'):
-                return stripped
+                return _clean_answer(stripped)
         
         return response.strip()
     

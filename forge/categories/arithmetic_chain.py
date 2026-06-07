@@ -94,7 +94,8 @@ class ArithmeticChainCategory(ForgeCategory):
         
         # Evaluate expression with standard operator precedence (PEMDAS)
         # Build a Python-evaluable expression
-        py_ops = {"+": "+", "-": "-", "*": "*", "//": "//", "/": "/", "**": "**", "%": "%"}
+        # NOTE: "//" in this category means regular division, not floor division
+        py_ops = {"+": "+", "-": "-", "*": "*", "//": "/", "/": "/", "**": "**", "%": "%"}
         py_parts = []
         for val, op in steps:
             if op is None:
