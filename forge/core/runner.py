@@ -579,20 +579,87 @@ class ForgeRunner:
     
     @staticmethod
     def compute_forge_score(category_results: list[CategoryResult]) -> float:
-        """
-        Compute the final FORGE score as unweighted average of category scores.
-        
-        Args:
-            category_results: List of CategoryResult instances
-            
-        Returns:
-            Final FORGE score between 0.0 and 1.0
-        """
         if not category_results:
             return 0.0
-        
         scores = [cr.category_score for cr in category_results]
         return sum(scores) / len(scores)
+    
+    @staticmethod
+    def compute_confidence_interval(category_results: list[CategoryResult],
+                                     n_bootstrap: int = 1000, ci: float = 0.95) -> dict:
+        """
+        Bootstrap confidence intervals by resampling per-question outcomes.
+        
+        Returns {score, ci_lower, ci_upper, margin} for the FORGE score
+        and per-category scores.
+        """
+        import random as _random
+        import math
+        
+        all_records = []
+        for cr in category_results:
+            for diff, stats in cr.accuracy_by_difficulty.items():
+                correct = stats["correct"]
+                total = stats["total"]
+                for i in range(total):
+                    all_records.append((cr.name, diff, 1 if i < correct else 0))
+        
+        forge_samples = []
+        cat_samples = {cr.name: [] for cr in category_results}
+        n = len(all_records)
+        
+        for _ in range(n_bootstrap):
+            sample = [_random.choice(all_records) for _ in range(n)]
+            by_cat = {}
+            by_cat_correct = {}
+            by_cat_total = {}
+            by_cat_diff = {}
+            
+            for cat_name, diff, outcome in sample:
+                if cat_name not in by_cat_diff:
+                    by_cat_diff[cat_name] = {}
+                if diff not in by_cat_diff[cat_name]:
+                    by_cat_diff[cat_name][diff] = {"correct": 0, "total": 0}
+                by_cat_diff[cat_name][diff]["total"] += 1
+                if outcome:
+                    by_cat_diff[cat_name][diff]["correct"] += 1
+            
+            cat_scores = []
+            for cr in category_results:
+                diff_data = by_cat_diff.get(cr.name, {})
+                score = ForgeRunner.compute_category_score(diff_data)
+                cat_scores.append(score)
+                cat_samples[cr.name].append(score)
+            
+            forge_bs = sum(cat_scores) / len(cat_scores) if cat_scores else 0.0
+            forge_samples.append(forge_bs)
+        
+        def _ci(samples, alpha):
+            sorted_s = sorted(samples)
+            low_idx = int(len(sorted_s) * (alpha / 2))
+            high_idx = int(len(sorted_s) * (1 - alpha / 2))
+            return sorted_s[low_idx], sorted_s[high_idx]
+        
+        alpha = 1 - ci
+        fl, fh = _ci(forge_samples, alpha)
+        forge_mean = sum(forge_samples) / len(forge_samples)
+        
+        cat_ci = {}
+        for cr in category_results:
+            if cat_samples[cr.name]:
+                cl, ch = _ci(cat_samples[cr.name], alpha)
+                cm = sum(cat_samples[cr.name]) / len(cat_samples[cr.name])
+                cat_ci[cr.name] = {"score": cm, "ci_lower": cl, "ci_upper": ch}
+        
+        return {
+            "forge_score": forge_mean,
+            "ci_lower": fl,
+            "ci_upper": fh,
+            "margin": (fh - fl) / 2,
+            "confidence": ci,
+            "bootstrap_samples": n_bootstrap,
+            "categories": cat_ci,
+        }
     
     @staticmethod
     def compute_interpolation_extrapolation(
