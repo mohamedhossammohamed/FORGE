@@ -1161,10 +1161,12 @@ function showResults(result) {
 
   const metrics = document.getElementById("metrics");
   const cliffLabel = result.cliff_index ? `Tier ${result.cliff_index}` : "No cliff";
+  const margin = result.forge_margin != null ? `±${(result.forge_margin * 100).toFixed(1)}%` : "";
   metrics.innerHTML = `
     <div class="metric-card">
       <div class="metric-label">FORGE Score</div>
       <div class="metric-value" data-count="${result.forge_score}">0</div>
+      <div class="metric-sub">${margin} (95% CI)</div>
     </div>
     <div class="metric-card">
       <div class="metric-label">Extrapolation</div>
@@ -1177,7 +1179,7 @@ function showResults(result) {
     <div class="metric-card">
       <div class="metric-label">Cost</div>
       <div class="metric-value" data-count="${result.cost || 0}" data-prefix="$" data-decimals="2">$0</div>
-      <div class="metric-sub">${result.total_questions} questions</div>
+      <div class="metric-sub">${result.total_questions} questions · seed ${result.seed || "?"}</div>
     </div>
   `;
 
