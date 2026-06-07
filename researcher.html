@@ -724,11 +724,28 @@ nav .inner {
 
     <div style="display:flex;gap:8px;margin-bottom:16px">
       <button class="btn btn-ghost btn-sm" id="btn-add-model">+ Add current model</button>
-      <button class="btn btn-ghost btn-sm" id="btn-run-all">Run all queued models</button>
+      <button class="btn btn-primary btn-sm" id="btn-run-all">Run all queued models</button>
       <button class="btn btn-ghost btn-sm" id="btn-clear-queue">Clear queue</button>
+      <button class="btn btn-ghost btn-sm" id="btn-cancel-all" style="display:none">Cancel</button>
     </div>
 
     <div class="model-queue" id="model-queue"></div>
+
+    <!-- Compare progress -->
+    <div id="compare-progress" style="display:none">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <div class="progress-text" id="compare-progress-text">Starting...</div>
+        <div class="progress-time" id="compare-progress-time"></div>
+      </div>
+      <div class="progress-bar"><div class="progress-fill" id="compare-progress-fill"></div></div>
+
+      <!-- Per-model status -->
+      <div id="compare-model-status" style="margin-top:12px"></div>
+
+      <!-- Live feed for current model -->
+      <div id="compare-feed-label" style="font-size:12px;color:var(--text-tertiary);margin-top:12px;margin-bottom:4px"></div>
+      <div class="feed" id="compare-feed"></div>
+    </div>
 
     <div id="comparison-results" style="display:none">
       <div class="section-title">Comparison</div>
@@ -741,10 +758,15 @@ nav .inner {
             <th>Extrapolation</th>
             <th>Cliff Index</th>
             <th>Cost</th>
+            <th>Time</th>
           </tr>
         </thead>
         <tbody id="comparison-tbody"></tbody>
       </table>
+      <div class="export-row">
+        <button class="btn btn-primary btn-sm" id="btn-save-comparison">Save comparison as snapshot</button>
+        <button class="btn-export" id="btn-export-comparison">Export comparison JSON</button>
+      </div>
     </div>
   </div>
 
@@ -928,7 +950,10 @@ async function runSingle() {
 }
 
 // ─── Execute run via backend ───
-async function executeRun(config) {
+async function executeRun(config, feedId, progressTextId, totalModels, modelIndex) {
+  feedId = feedId || "feed";
+  progressTextId = progressTextId || "progress-text";
+
   const response = await fetch("http://localhost:7860/api/run", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -945,6 +970,7 @@ async function executeRun(config) {
   const decoder = new TextDecoder();
   let buffer = "";
   let completed = 0;
+  let totalQ = 0;
 
   while (true) {
     const { done, value } = await reader.read();
@@ -959,15 +985,27 @@ async function executeRun(config) {
       const data = JSON.parse(line.slice(6));
 
       if (data.type === "start") {
-        document.getElementById("progress-text").textContent = `0 / ${data.total} questions`;
+        totalQ = data.total;
+        document.getElementById(progressTextId).textContent =
+          totalModels !== undefined
+            ? `Model ${modelIndex + 1}/${totalModels}: ${config.model} — 0/${totalQ}`
+            : `0 / ${totalQ} questions`;
       }
 
       if (data.type === "progress") {
         completed++;
-        const pct = (completed / data.total * 100).toFixed(0);
-        document.getElementById("progress-fill").style.width = pct + "%";
-        document.getElementById("progress-text").textContent = `${completed} / ${data.total} — ${data.category}`;
-        addFeedItem(data.category, data.difficulty, data.correct, data.correct ? "✓" : "✗", data.elapsed);
+        const pct = (completed / totalQ * 100).toFixed(0);
+
+        // Update progress bar (compare uses its own, single uses run's)
+        const fillId = feedId === "compare-feed" ? "compare-progress-fill" : "progress-fill";
+        document.getElementById(fillId).style.width = `${((modelIndex * totalQ + completed) / (totalModels * totalQ)) * 100}%`;
+
+        document.getElementById(progressTextId).textContent =
+          totalModels !== undefined
+            ? `Model ${modelIndex + 1}/${totalModels}: ${config.model} — ${completed}/${totalQ}`
+            : `${completed} / ${totalQ} — ${data.category}`;
+
+        addFeedItem(data.category, data.difficulty, data.correct, data.correct ? "✓" : "✗", data.elapsed, feedId);
       }
 
       if (data.type === "result") {
@@ -1177,25 +1215,104 @@ async function runAllModels() {
   if (modelQueue.length === 0) { alert("Add models to the queue first"); return; }
 
   comparisonResults = {};
+  running = true;
   const seed = parseInt(document.getElementById("seed").value) || 42;
+  const totalModels = modelQueue.length;
+  let completedModels = 0;
+
+  // Show progress UI
+  const progressDiv = document.getElementById("compare-progress");
+  progressDiv.style.display = "block";
+  document.getElementById("btn-run-all").style.display = "none";
+  document.getElementById("btn-cancel-all").style.display = "";
+  document.getElementById("comparison-results").style.display = "none";
+
+  // Build model status list
+  const statusDiv = document.getElementById("compare-model-status");
+  statusDiv.innerHTML = modelQueue.map((m, i) => `
+    <div id="model-status-${i}" style="display:flex;align-items:center;gap:8px;padding:8px 12px;border:1px solid var(--border);margin-bottom:4px;font-size:13px;transition:border-color 150ms">
+      <span style="min-width:16px;text-align:center" id="model-icon-${i}">○</span>
+      <span style="flex:1;font-weight:500">${m.model}</span>
+      <span style="color:var(--text-tertiary);font-size:12px" id="model-time-${i}">waiting</span>
+      <span style="font-size:12px" id="model-score-${i}"></span>
+    </div>
+  `).join("");
+
+  compareStartTime = Date.now();
+  compareTimerInterval = setInterval(() => {
+    document.getElementById("compare-progress-time").textContent =
+      `Total elapsed: ${((Date.now() - compareStartTime) / 1000).toFixed(0)}s`;
+  }, 1000);
 
   for (let i = 0; i < modelQueue.length; i++) {
-    const config = modelQueue[i];
-    config.seed = seed;
+    if (!running) break;
 
-    document.getElementById("progress-text").textContent = `Running model ${i + 1}/${modelQueue.length}: ${config.model}`;
+    const config = { ...modelQueue[i], seed };
+    const modelStartTime = Date.now();
+
+    // Update status: running
+    document.getElementById(`model-status-${i}`).style.borderColor = "var(--ink)";
+    document.getElementById(`model-icon-${i}`).textContent = "●";
+    document.getElementById(`model-icon-${i}`).style.color = "var(--ink)";
+    document.getElementById(`model-time-${i}`).textContent = "running...";
+    document.getElementById(`model-time-${i}`).style.color = "var(--ink)";
+
+    // Update feed label
+    document.getElementById("compare-feed-label").textContent = `Live feed — ${config.model}`;
+
+    // Overall progress
+    const pct = (completedModels / totalModels * 100).toFixed(0);
+    document.getElementById("compare-progress-fill").style.width = pct + "%";
+    document.getElementById("compare-progress-text").textContent =
+      `Model ${i + 1} of ${totalModels}: ${config.model}`;
+
+    // Clear feed for this model
+    document.getElementById("compare-feed").innerHTML = "";
 
     try {
       abortController = new AbortController();
-      const result = await executeRun(config);
-      comparisonResults[config.model] = { ...result, config, timestamp: new Date().toISOString() };
+      const result = await executeRun(config, "compare-feed", "compare-progress-text", totalModels, i);
+      const elapsed = (Date.now() - modelStartTime) / 1000;
+
+      comparisonResults[config.model] = { ...result, config, timestamp: new Date().toISOString(), elapsed };
+
+      // Update status: done
+      document.getElementById(`model-status-${i}`).style.borderColor = "var(--success)";
+      document.getElementById(`model-icon-${i}`).textContent = "✓";
+      document.getElementById(`model-icon-${i}`).style.color = "var(--success)";
+      document.getElementById(`model-time-${i}`).textContent = `${elapsed.toFixed(0)}s`;
+      document.getElementById(`model-time-${i}`).style.color = "var(--success)";
+      document.getElementById(`model-score-${i}`).textContent = `${(result.forge_score * 100).toFixed(1)}%`;
+      document.getElementById(`model-score-${i}`).style.color = "var(--ink)";
+      document.getElementById(`model-score-${i}`).style.fontWeight = "500";
+
     } catch (err) {
-      console.error(`Failed: ${config.model}`, err);
+      const elapsed = (Date.now() - modelStartTime) / 1000;
+      document.getElementById(`model-status-${i}`).style.borderColor = "var(--error)";
+      document.getElementById(`model-icon-${i}`).textContent = "✕";
+      document.getElementById(`model-icon-${i}`).style.color = "var(--error)";
+      document.getElementById(`model-time-${i}`).textContent = `failed ${elapsed.toFixed(0)}s`;
+      document.getElementById(`model-time-${i}`).style.color = "var(--error)";
+      document.getElementById(`model-score-${i}`).textContent = err.message;
+      document.getElementById(`model-score-${i}`).style.color = "var(--error)";
     }
+
+    completedModels++;
   }
+
+  // Done
+  clearInterval(compareTimerInterval);
+  document.getElementById("compare-progress-fill").style.width = "100%";
+  document.getElementById("compare-progress-text").textContent = `Complete — ${Object.keys(comparisonResults).length}/${totalModels} models`;
+  document.getElementById("btn-run-all").style.display = "";
+  document.getElementById("btn-cancel-all").style.display = "none";
+  running = false;
 
   showComparison();
 }
+
+let compareStartTime = 0;
+let compareTimerInterval = null;
 
 // ─── Comparison ───
 function showComparison() {
