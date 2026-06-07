@@ -150,6 +150,11 @@ async def run_evaluation(req: RunRequest):
                                 "elapsed": result["elapsed"],
                                 "completed": completed,
                                 "total": total_questions,
+                                "is_error": result.get("is_error", False),
+                                "error_message": result.get("error_message"),
+                                "expected": str(result.get("expected", "")),
+                                "extracted": str(result.get("extracted", "")),
+                                "response_preview": str(result.get("response", ""))[:500],
                             }
                             yield f"data: {json.dumps(progress_data)}\n\n"
 

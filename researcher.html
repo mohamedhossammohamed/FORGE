@@ -316,8 +316,6 @@ nav .inner {
   font-size: 12px;
   padding: calc(var(--unit) * 1) calc(var(--unit) * 1.5);
   border-left: 2px solid transparent;
-  display: flex;
-  gap: calc(var(--unit) * 2);
   opacity: 0;
   animation: fadeIn 200ms ease forwards;
 }
@@ -332,6 +330,20 @@ nav .inner {
 .feed-status.ok { color: var(--success); }
 .feed-status.fail { color: var(--error); }
 .feed-time { color: var(--text-tertiary); margin-left: auto; }
+
+.feed-detail {
+  margin-top: 6px;
+  padding: 6px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  line-height: 1.5;
+  width: 100%;
+}
+.feed-detail.error-detail { background: #FEE2E2; color: #991B1B; }
+.feed-detail.wrong-detail { background: #FEF3C7; color: #92400E; }
+.feed-detail code { background: rgba(0,0,0,0.06); padding: 1px 4px; border-radius: 3px; font-size: 10px; }
+.feed-detail pre { margin: 4px 0 0; padding: 6px; background: rgba(0,0,0,0.04); border-radius: 3px; font-size: 10px; max-height: 120px; overflow-y: auto; white-space: pre-wrap; word-break: break-all; }
+.feed-detail details summary { cursor: pointer; font-size: 10px; color: var(--text-tertiary); }
 
 /* ─── Results ─── */
 
@@ -837,7 +849,53 @@ document.addEventListener("DOMContentLoaded", () => {
   checkBackend();
   loadSnapshots();
   setupEventListeners();
+  restoreFormState();
 });
+
+// ─── Form persistence ───
+function saveFormState() {
+  const state = {
+    model: document.getElementById("model-name").value,
+    apiBase: document.getElementById("api-base").value,
+    apiKey: document.getElementById("api-key").value,
+    seed: document.getElementById("seed").value,
+    mode: currentMode,
+    costIn: document.getElementById("cost-in").value,
+    costOut: document.getElementById("cost-out").value,
+  };
+  localStorage.setItem("forge_form", JSON.stringify(state));
+}
+
+function restoreFormState() {
+  try {
+    const state = JSON.parse(localStorage.getItem("forge_form") || "{}");
+    if (state.model) document.getElementById("model-name").value = state.model;
+    if (state.apiBase) document.getElementById("api-base").value = state.apiBase;
+    if (state.apiKey) document.getElementById("api-key").value = state.apiKey;
+    if (state.seed) document.getElementById("seed").value = state.seed;
+    if (state.costIn) document.getElementById("cost-in").value = state.costIn;
+    if (state.costOut) document.getElementById("cost-out").value = state.costOut;
+    if (state.mode) {
+      currentMode = state.mode;
+      document.querySelectorAll(".mode-pill").forEach(b => {
+        b.classList.toggle("active", b.dataset.mode === currentMode);
+      });
+      document.getElementById("mode-info").textContent = MODES[currentMode].label;
+    }
+  } catch {}
+}
+
+// Auto-save on any input change
+function setupAutoSave() {
+  ["model-name", "api-base", "api-key", "seed", "cost-in", "cost-out"].forEach(id => {
+    document.getElementById(id).addEventListener("input", saveFormState);
+  });
+  document.querySelectorAll(".mode-pill").forEach(btn => {
+    btn.addEventListener("click", () => {
+      setTimeout(saveFormState, 10);
+    });
+  });
+}
 
 // ─── Backend check ───
 async function checkBackend() {
@@ -912,6 +970,8 @@ function setupEventListeners() {
   document.querySelectorAll(".btn-export").forEach(btn => {
     btn.addEventListener("click", () => exportResult(btn.dataset.export, btn));
   });
+
+  setupAutoSave();
 }
 
 // ─── Run single model ───
@@ -1013,7 +1073,13 @@ async function executeRun(config, feedId, progressTextId, totalModels, modelInde
             ? `Model ${modelIndex + 1}/${totalModels}: ${config.model} — ${completed}/${totalQ}`
             : `${completed} / ${totalQ} — ${data.category}`;
 
-        addFeedItem(data.category, data.difficulty, data.correct, data.correct ? "✓" : "✗", data.elapsed, feedId);
+        addFeedItem(data.category, data.difficulty, data.correct, data.correct ? "✓" : "✗", data.elapsed, feedId, {
+          isError: data.is_error,
+          errorMessage: data.error_message,
+          expected: data.expected,
+          extracted: data.extracted,
+          responsePreview: data.response_preview,
+        });
       }
 
       if (data.type === "result") {
@@ -1148,17 +1214,42 @@ function drawCliffChart(data) {
 }
 
 // ─── Feed ───
-function addFeedItem(cat, diff, correct, status, time) {
-  const feed = document.getElementById("feed");
+function addFeedItem(cat, diff, correct, status, time, feedId, details) {
+  feedId = feedId || "feed";
+  const feed = document.getElementById(feedId);
   const item = document.createElement("div");
   item.className = `feed-item ${correct ? "correct" : "wrong"}`;
+
+  let detailHtml = "";
+  if (details) {
+    if (details.isError) {
+      detailHtml = `<div class="feed-detail error-detail">
+        <strong>ERROR:</strong> ${escapeHtml(details.errorMessage || "Unknown error")}
+        ${details.responsePreview ? `<br><strong>Response:</strong> <code>${escapeHtml(details.responsePreview)}</code>` : ""}
+      </div>`;
+    } else if (!correct) {
+      detailHtml = `<div class="feed-detail wrong-detail">
+        <strong>Expected:</strong> <code>${escapeHtml(details.expected || "?")}</code><br>
+        <strong>Extracted:</strong> <code>${escapeHtml(details.extracted || "?")}</code>
+        ${details.responsePreview ? `<br><strong>Raw response:</strong> <details><summary>Show</summary><pre>${escapeHtml(details.responsePreview)}</pre></details>` : ""}
+      </div>`;
+    }
+  }
+
   item.innerHTML = `
-    <span class="feed-cat">${CAT_DISPLAY[cat] || cat}</span>
+    <span class="feed-cat">${CAT_DISPLAY[cat] || cat} (d${diff})</span>
     <span class="feed-status ${correct ? "ok" : "fail"}">${status}</span>
     <span class="feed-time">${time ? time.toFixed(1) + "s" : ""}</span>
+    ${detailHtml}
   `;
   feed.appendChild(item);
   feed.scrollTop = feed.scrollHeight;
+}
+
+function escapeHtml(str) {
+  const div = document.createElement("div");
+  div.textContent = str;
+  return div.innerHTML;
 }
 
 // ─── Timer ───
