@@ -241,6 +241,41 @@ p.lead {
 
 .hypothesis strong { color: var(--ink); }
 
+/* ─── Form fields ─── */
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--unit) * 0.5);
+}
+
+.field-label {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.field-hint {
+  font-size: 12px;
+  color: var(--text-tertiary);
+}
+
+.field-input {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  padding: calc(var(--unit) * 1) calc(var(--unit) * 1.5);
+  width: 100%;
+  transition: border-color 150ms ease;
+}
+
+.field-input::placeholder { color: var(--text-tertiary); }
+.field-input:focus { outline: none; border-color: var(--ink); }
+
 /* ─── Data table ─── */
 
 .data-table {
@@ -807,15 +842,37 @@ footer a:hover { color: var(--ink); }
 
   <table class="data-table">
     <thead>
-      <tr><th>Mode</th><th>Questions</th><th>Time</th><th>Cost</th></tr>
+      <tr><th>Mode</th><th>Questions</th><th>Time</th><th>Est. Cost</th></tr>
     </thead>
     <tbody>
-      <tr><td>nano</td><td>5</td><td>~30s</td><td><$0.01</td></tr>
-      <tr><td>quick</td><td>250</td><td>~5 min</td><td>~$0.10</td></tr>
-      <tr><td>standard</td><td>2,500</td><td>~1 hr</td><td>~$1.00</td></tr>
-      <tr><td>full</td><td>10,000</td><td>~4 hr</td><td>~$4.00</td></tr>
+      <tr><td>nano</td><td>5</td><td>~30s</td><td id="cost-nano"><$0.01</td></tr>
+      <tr><td>quick</td><td>250</td><td>~5 min</td><td id="cost-quick">~$0.10</td></tr>
+      <tr><td>standard</td><td>2,500</td><td>~1 hr</td><td id="cost-standard">~$1.00</td></tr>
+      <tr><td>full</td><td>10,000</td><td>~4 hr</td><td id="cost-full">~$4.00</td></tr>
     </tbody>
   </table>
+
+  <div class="hypothesis" style="margin-top: calc(var(--unit) * 3);">
+    <p style="margin-bottom: calc(var(--unit) * 2);"><strong>Cost estimation settings</strong> — Adjust to match your model's pricing. Defaults reflect typical OpenRouter rates (e.g., GPT-4o: $5/$15, GPT-4o-mini: $0.15/$0.60, Llama-3.1-405B: $3/$9).</p>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: calc(var(--unit) * 2);">
+      <div class="field">
+        <label class="field-label">Input price ($/1M tokens)</label>
+        <input type="number" class="field-input" id="est-input-price" value="4.00" step="0.01" placeholder="e.g. 4.00">
+      </div>
+      <div class="field">
+        <label class="field-label">Output price ($/1M tokens)</label>
+        <input type="number" class="field-input" id="est-output-price" value="15.00" step="0.01" placeholder="e.g. 15.00">
+      </div>
+      <div class="field">
+        <label class="field-label">Concurrent API calls</label>
+        <input type="number" class="field-input" id="est-concurrency" value="10" step="1" min="1" max="50" placeholder="e.g. 10">
+      </div>
+      <div class="field">
+        <label class="field-label">Avg response time (sec)</label>
+        <input type="number" class="field-input" id="est-response-time" value="8" step="1" min="1" max="120" placeholder="e.g. 8">
+      </div>
+    </div>
+  </div>
 </section>
 
 <!-- ─── Footer ─── -->
@@ -846,6 +903,57 @@ const observer = new IntersectionObserver((entries) => {
 }, { threshold: 0.1 });
 
 document.querySelectorAll(".reveal").forEach(el => observer.observe(el));
+
+// Cost estimation
+const EST_TOKENS_PER_Q = 1200; // avg tokens per question (input + output)
+const EST_INPUT_RATIO = 0.4;   // 40% input, 60% output
+const MODE_QUESTIONS = { nano: 5, quick: 250, standard: 2500, full: 10000 };
+
+function updateCostEstimates() {
+  const inputPrice = parseFloat(document.getElementById('est-input-price').value) || 0;
+  const outputPrice = parseFloat(document.getElementById('est-output-price').value) || 0;
+  const concurrency = parseInt(document.getElementById('est-concurrency').value) || 10;
+  const responseTime = parseInt(document.getElementById('est-response-time').value) || 8;
+
+  Object.entries(MODE_QUESTIONS).forEach(([mode, questions]) => {
+    const totalTokens = questions * EST_TOKENS_PER_Q;
+    const inputTokens = totalTokens * EST_INPUT_RATIO;
+    const outputTokens = totalTokens * (1 - EST_INPUT_RATIO);
+    const cost = (inputTokens / 1_000_000) * inputPrice + (outputTokens / 1_000_000) * outputPrice;
+
+    const el = document.getElementById(`cost-${mode}`);
+    if (el) {
+      if (cost < 0.01) el.textContent = '<$0.01';
+      else if (cost < 1) el.textContent = `~$${cost.toFixed(2)}`;
+      else el.textContent = `~$${cost.toFixed(1)}`;
+    }
+  });
+
+  // Update time estimate
+  const timeEl = document.getElementById('est-time');
+  if (timeEl) {
+    const totalQuestions = MODE_QUESTIONS.quick; // default to quick
+    const batches = Math.ceil(totalQuestions / concurrency);
+    const estMinutes = (batches * responseTime / 60).toFixed(1);
+    timeEl.textContent = `~${estMinutes} min (quick mode)`;
+  }
+}
+
+// Add time display element
+const timeDisplay = document.createElement('p');
+timeDisplay.style.marginTop = 'calc(var(--unit) * 1)';
+timeDisplay.style.fontSize = '13px';
+timeDisplay.style.color = 'var(--text-secondary)';
+timeDisplay.innerHTML = 'Estimated runtime: <span id="est-time">~5 min (quick mode)</span>';
+document.querySelector('#get-started .hypothesis').appendChild(timeDisplay);
+
+// Event listeners
+['est-input-price', 'est-output-price', 'est-concurrency', 'est-response-time'].forEach(id => {
+  document.getElementById(id).addEventListener('input', updateCostEstimates);
+});
+
+// Initial calculation
+updateCostEstimates();
 </script>
 
 </body>

@@ -673,6 +673,12 @@ nav .inner {
 <div class="backend-banner" id="backend-banner">
   <span id="backend-msg"></span>
 </div>
+<div id="backend-url-input" style="display:none;align-items:center;gap:8px;padding:8px 24px;background:#FFF8E1;border-bottom:1px solid var(--border);font-size:13px">
+  <label style="font-weight:500;color:var(--text-secondary)">Backend URL:</label>
+  <input type="text" id="backend-url-field" style="font-family:var(--font-mono);font-size:13px;border:1px solid var(--border);padding:4px 8px;flex:1;max-width:320px" placeholder="http://localhost:7860">
+  <button onclick="window.FORGE_BACKEND_URL=document.getElementById('backend-url-field').value||'http://localhost:7860';checkBackend();document.getElementById('backend-url-input').style.display='none'" style="font-family:var(--font-mono);font-size:12px;padding:4px 12px;background:var(--ink);color:#fff;border:none;cursor:pointer">Apply</button>
+  <button onclick="document.getElementById('backend-url-input').style.display='none'" style="font-family:var(--font-mono);font-size:12px;padding:4px 12px;background:transparent;border:1px solid var(--border);cursor:pointer">Cancel</button>
+</div>
 
 <div class="app">
   <!-- ─── Tabs ─── -->
@@ -732,6 +738,15 @@ nav .inner {
         </div>
         <span class="field-hint">Parallel API requests. Higher = faster but may hit rate limits.</span>
       </div>
+      <div class="field">
+        <label class="field-label">Avg response time (sec)</label>
+        <input type="number" class="field-input" id="avg-response-time" value="8" step="1" min="1" max="120" placeholder="e.g. 8">
+        <span class="field-hint">Estimated seconds per API call. Used for runtime estimation.</span>
+      </div>
+    </div>
+
+    <div id="est-runtime" style="font-size:13px;color:var(--text-secondary);margin-bottom:calc(var(--unit)*1.5)">
+      Estimated runtime (quick mode): <span id="est-runtime-val">~5 min</span>
     </div>
 
     <button class="btn-run" id="btn-run">Run FORGE</button>
@@ -886,6 +901,13 @@ const CAT_DISPLAY = {
 
 const MODEL_COLORS = ["#0A1628","#E8A020","#2D8A4E","#C43E3E","#5B6ABF","#8B5CF6"];
 
+// ─── Backend URL (configurable) ───
+// Override at runtime via the settings panel or by setting window.FORGE_BACKEND_URL
+// before this script runs (e.g. in a wrapper HTML).
+const FORGE_BACKEND = window.FORGE_BACKEND_URL || "http://localhost:7860";
+
+const MODE_QUESTIONS = { nano: 5, quick: 250, standard: 2500, full: 10000 };
+
 // ─── State ───
 let currentMode = "nano";
 let modelQueue = [];
@@ -932,6 +954,9 @@ function restoreFormState() {
       document.getElementById("concurrency").value = state.concurrency;
       document.getElementById("concurrency-val").textContent = state.concurrency;
     }
+    if (state.avgResponseTime) {
+      document.getElementById("avg-response-time").value = state.avgResponseTime;
+    }
     if (state.mode) {
       currentMode = state.mode;
       document.querySelectorAll(".mode-pill").forEach(b => {
@@ -944,14 +969,33 @@ function restoreFormState() {
 
 // Auto-save on any input change
 function setupAutoSave() {
-  ["model-name", "api-base", "api-key", "seed", "cost-in", "cost-out"].forEach(id => {
+  ["model-name", "api-base", "api-key", "seed", "cost-in", "cost-out", "concurrency", "avg-response-time"].forEach(id => {
     document.getElementById(id).addEventListener("input", saveFormState);
   });
   // Concurrency slider
   document.getElementById("concurrency").addEventListener("input", () => {
     document.getElementById("concurrency-val").textContent = document.getElementById("concurrency").value;
+    updateRuntimeEstimate();
     saveFormState();
   });
+  document.getElementById("avg-response-time").addEventListener("input", () => {
+    updateRuntimeEstimate();
+    saveFormState();
+  });
+
+  function updateRuntimeEstimate() {
+    const concurrency = parseInt(document.getElementById("concurrency").value) || 10;
+    const responseTime = parseInt(document.getElementById("avg-response-time").value) || 8;
+    const questions = MODE_QUESTIONS[currentMode] || 250;
+    const batches = Math.ceil(questions / concurrency);
+    const estMinutes = (batches * responseTime / 60).toFixed(1);
+    const el = document.getElementById("est-runtime-val");
+    if (el) el.textContent = `~${estMinutes} min`;
+  }
+
+  // Initial runtime estimate
+  updateRuntimeEstimate();
+
   document.querySelectorAll(".mode-pill").forEach(btn => {
     btn.addEventListener("click", () => {
       setTimeout(saveFormState, 10);
@@ -965,10 +1009,10 @@ async function checkBackend() {
   const msg = document.getElementById("backend-msg");
 
   banner.className = "backend-banner checking";
-  msg.innerHTML = "Checking for local FORGE backend at localhost:7860...";
+  msg.innerHTML = `Checking for local FORGE backend at ${FORGE_BACKEND}...`;
 
   try {
-    const res = await fetch("http://localhost:7860/api/test", {
+    const res = await fetch(`${FORGE_BACKEND}/api/test`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ model: "test", api_base: "https://openrouter.ai/api/v1", api_key: "test" }),
@@ -983,7 +1027,7 @@ async function checkBackend() {
     }
   } catch {
     banner.className = "backend-banner offline";
-    msg.innerHTML = '✗ Backend not detected. Run <code>python -m forge.server</code> locally, then refresh this page. Without the backend, you can still view saved snapshots and compare past runs.';
+    msg.innerHTML = `✗ Backend not detected. Run <code>python -m forge.server</code> locally, then refresh this page. Without the backend, you can still view saved snapshots and compare past runs. <a href="#" onclick="document.getElementById('backend-url-input').style.display='inline-flex';return false" style="color:inherit;text-decoration:underline">Change URL</a>`;
   }
 }
 
@@ -1006,6 +1050,7 @@ function setupEventListeners() {
       btn.classList.add("active");
       currentMode = btn.dataset.mode;
       document.getElementById("mode-info").textContent = MODES[currentMode].label;
+      updateRuntimeEstimate();
     });
   });
 
@@ -1021,6 +1066,17 @@ function setupEventListeners() {
   document.getElementById("btn-add-model").addEventListener("click", addCurrentModel);
   document.getElementById("btn-run-all").addEventListener("click", runAllModels);
   document.getElementById("btn-clear-queue").addEventListener("click", () => { modelQueue = []; renderQueue(); });
+  document.getElementById("btn-cancel-all").addEventListener("click", () => {
+    running = false;
+    if (abortController) {
+      abortController.abort();
+      abortController = new AbortController(); // reset for next run
+    }
+    document.getElementById("btn-run-all").style.display = "";
+    document.getElementById("btn-cancel-all").style.display = "none";
+    document.getElementById("compare-progress-text").textContent = "Cancelled.";
+    clearInterval(compareTimerInterval);
+  });
 
   // Snapshots
   document.getElementById("btn-save-snapshot").addEventListener("click", saveSnapshot);
@@ -1084,7 +1140,7 @@ async function executeRun(config, feedId, progressTextId, totalModels, modelInde
   feedId = feedId || "feed";
   progressTextId = progressTextId || "progress-text";
 
-  const response = await fetch("http://localhost:7860/api/run", {
+  const response = await fetch(`${FORGE_BACKEND}/api/run`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(config),
@@ -1338,6 +1394,7 @@ function getConfig() {
     input_cost: parseFloat(document.getElementById("cost-in").value) || 0,
     output_cost: parseFloat(document.getElementById("cost-out").value) || 0,
     concurrency: parseInt(document.getElementById("concurrency").value) || 10,
+    avg_response_time: parseInt(document.getElementById("avg-response-time").value) || 8,
   };
 }
 
