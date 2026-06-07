@@ -45,6 +45,7 @@ Thumbs.db
 
 # Project specific
 results/
+results.json
 *.log
 
 # CommandCode

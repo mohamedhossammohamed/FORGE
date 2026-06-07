@@ -204,73 +204,138 @@ class QuantumAmplitudesCategory(ForgeCategory):
         return " + ".join(parts) if parts else "0"
     
     def grade(self, prediction: str, answer: str) -> bool:
-        """Grade by checking state vector equivalence (up to global phase)."""
+        """
+        Grade by checking state vector equivalence (up to global phase).
+
+        Parsing priority:
+        1. JSON array of complex numbers  e.g. [0.707, 0, 0, 0.707]
+        2. Ket notation with symbolic amplitudes  e.g. (1/√2)|00> + (1/√2)|11>
+        3. Comma-separated complex / float values
+        """
         try:
-            # Parse both states
             pred_vec = self._parse_state_vector(prediction)
             ans_vec = self._parse_state_vector(answer)
-            
+
             if pred_vec is None or ans_vec is None:
                 return False
-            
             if len(pred_vec) != len(ans_vec):
                 return False
-            
-            # Check equivalence up to global phase
-            # Find first non-zero amplitude
-            ref_idx = None
-            for i, amp in enumerate(ans_vec):
-                if amp != 0:
-                    ref_idx = i
-                    break
-            
+
+            tol = 1e-4
+
+            def to_complex(v):
+                try:
+                    return complex(sympy.N(v, 15))
+                except Exception:
+                    return complex(v)
+
+            pred_c = [to_complex(x) for x in pred_vec]
+            ans_c = [to_complex(x) for x in ans_vec]
+
+            # Find first non-zero answer amplitude
+            ref_idx = next((i for i, a in enumerate(ans_c) if abs(a) > tol), None)
             if ref_idx is None:
-                return all(a == 0 for a in pred_vec)
-            
-            # Compute global phase
-            if pred_vec[ref_idx] == 0:
+                return all(abs(p) < tol for p in pred_c)
+
+            if abs(pred_c[ref_idx]) < tol:
                 return False
-            
-            phase = ans_vec[ref_idx] / pred_vec[ref_idx]
-            
-            # Check all amplitudes match up to this phase
-            for p, a in zip(pred_vec, ans_vec):
-                if sympy.simplify(p * phase - a) != 0:
+
+            # Global phase factor
+            phase = ans_c[ref_idx] / pred_c[ref_idx]
+
+            for p, a in zip(pred_c, ans_c):
+                if abs(p * phase - a) > tol:
                     return False
-            
             return True
-        except:
+        except Exception:
             return False
-    
+
     def _parse_state_vector(self, text: str):
-        """Parse state vector from text representation."""
-        try:
-            # Simple parsing - extract amplitudes
-            import re
-            
-            # Find all amplitude|basis> patterns
-            pattern = r'([+-]?\s*(?:\d+(?:/\d+)?(?:\*?√?\d+)?)?)\s*\|([01]+)>'
-            matches = re.findall(pattern, text)
-            
-            if not matches:
-                return None
-            
+        """
+        Parse a quantum state vector from a string.
+
+        Handles (in order of preference):
+        1. JSON array: [0.707, 0, 0, 0.707]  or  [[0.707,0],[0,0],[0,0],[0.707,0]]
+        2. Ket notation: (1/√2)|00> + (1/√2)|11>
+        3. Comma-separated complex / float values: 0.707+0j, 0, 0, 0.707
+        """
+        import re
+        import json
+
+        text = text.strip()
+
+        # ── Path 1: JSON array ──────────────────────────────────────────────
+        json_match = re.search(r'\[[\d\s.,+\-ej\[\]]+\]', text, re.IGNORECASE)
+        if json_match:
+            try:
+                raw = json.loads(json_match.group())
+                vec = []
+                for item in raw:
+                    if isinstance(item, list):
+                        vec.append(complex(item[0], item[1] if len(item) > 1 else 0))
+                    else:
+                        vec.append(complex(item))
+                if vec:
+                    return [sympy.sympify(v) for v in vec]
+            except Exception:
+                pass
+
+        # ── Path 2: Ket notation ────────────────────────────────────────────
+        # Matches: (1/√2)|00>  or  -1/2|1>  or  |0>  or  -(1/√2)|1>
+        ket_pattern = re.compile(
+            r'([+\-]?\s*'
+            r'(?:\([^)]*\)|[\d√/.*\s]+)?'
+            r')\s*\|([01]+)>',
+            re.UNICODE,
+        )
+        matches = ket_pattern.findall(text)
+        if matches:
             n_qubits = len(matches[0][1])
             n_states = 2 ** n_qubits
-            vec = [0] * n_states
-            
-            for amp_str, basis in matches:
+            vec = [sympy.Integer(0)] * n_states
+
+            for amp_raw, basis in matches:
                 idx = int(basis, 2)
-                amp_str = amp_str.strip().replace(' ', '')
+                amp_str = amp_raw.strip().replace(' ', '')
+
+                if amp_str.startswith('(') and amp_str.endswith(')'):
+                    amp_str = amp_str[1:-1]
+
                 if amp_str in ('', '+'):
-                    amp = 1
+                    amp = sympy.Integer(1)
                 elif amp_str == '-':
-                    amp = -1
+                    amp = sympy.Integer(-1)
                 else:
-                    amp_str = amp_str.replace('√', 'sqrt').replace('*', '')
-                    amp = sympy.sympify(amp_str)
-                vec[idx] = amp
-            
+                    amp_str = (
+                        amp_str
+                        .replace('√', 'sqrt')
+                        .replace('i', 'I')
+                        .replace('j', 'I')
+                    )
+                    try:
+                        amp = sympy.sympify(amp_str)
+                    except Exception:
+                        amp = sympy.Integer(0)
+
+                vec[idx] = vec[idx] + amp
+
             return vec
-        except:
-            return None
+
+        # ── Path 3: Comma-separated complex / float values ──────────────────
+        parts = [p.strip() for p in re.split(r',\s*', text) if p.strip()]
+        if len(parts) >= 2:
+            vec = []
+            for p in parts:
+                p = p.replace('i', 'j')
+                try:
+                    vec.append(sympy.sympify(complex(p)))
+                except Exception:
+                    try:
+                        vec.append(sympy.sympify(p))
+                    except Exception:
+                        vec = []
+                        break
+            if vec:
+                return vec
+
+        return None

@@ -19,7 +19,7 @@ from .generator import ForgeCategory, Problem
 @dataclass
 class ModelConfig:
     """Configuration for the model API endpoint."""
-    
+
     name: str
     api_base: str
     api_key: str
@@ -33,7 +33,7 @@ class ModelConfig:
 @dataclass
 class RunConfig:
     """Configuration for a single evaluation run."""
-    
+
     mode: str  # "full", "standard", "quick"
     seed: int
     categories: list[str]  # Category names or ["all"]
@@ -45,7 +45,7 @@ class RunConfig:
 @dataclass
 class CategoryResult:
     """Results for a single category evaluation."""
-    
+
     name: str
     display_name: str
     total_questions: int
@@ -54,12 +54,13 @@ class CategoryResult:
     category_score: float
     cliff_index: Optional[int] = None
     errors: list[str] = field(default_factory=list)
+    question_results: list[dict] = field(default_factory=list)
 
 
 @dataclass
 class RunResult:
     """Complete results for a FORGE evaluation run."""
-    
+
     run_config: RunConfig
     model_config: ModelConfig
     category_results: list[CategoryResult]
@@ -79,14 +80,14 @@ class RunResult:
 class ForgeRunner:
     """
     Async execution engine for running FORGE evaluations.
-    
+
     Handles:
     - OpenAI-compatible API queries
     - Parallel execution with configurable concurrency
     - Token counting and cost estimation
     - Progress tracking
     """
-    
+
     def __init__(
         self,
         model_config: ModelConfig,
@@ -94,11 +95,12 @@ class ForgeRunner:
     ):
         self.model_config = model_config
         self.concurrency = concurrency
+        self.semaphore = asyncio.Semaphore(concurrency)
         self.total_input_tokens = 0
         self.total_output_tokens = 0
         self.client: Optional[httpx.AsyncClient] = None
         self.errors: list[str] = []
-    
+
     async def __aenter__(self):
         self.client = httpx.AsyncClient(
             base_url=self.model_config.api_base,
@@ -114,25 +116,25 @@ class ForgeRunner:
             ),
         )
         return self
-    
+
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         if self.client:
             await self.client.aclose()
-    
+
     async def test_connection(self) -> tuple[bool, str]:
         """
         Test API connection and authentication.
-        
+
         Returns:
             Tuple of (success, message)
         """
         if not self.client:
             return False, "Client not initialized"
-        
+
         try:
             # Try to list models or make a simple request
             response = await self.client.get("/models", timeout=10.0)
-            
+
             if response.status_code == 200:
                 return True, "Connection successful"
             elif response.status_code == 401:
@@ -144,14 +146,14 @@ class ForgeRunner:
                 return await self._test_completion()
             else:
                 return False, f"Unexpected status code: {response.status_code}"
-        
+
         except httpx.ConnectError:
             return False, f"Cannot connect to {self.model_config.api_base}"
         except httpx.TimeoutException:
             return False, "Connection timeout"
         except Exception as e:
             return False, f"Connection error: {str(e)}"
-    
+
     async def _test_completion(self) -> tuple[bool, str]:
         """Test with a minimal completion request."""
         try:
@@ -160,37 +162,49 @@ class ForgeRunner:
                 "messages": [{"role": "user", "content": "Say 'OK'"}],
                 "max_tokens": 10,
             }
-            
+
             response = await self.client.post("/chat/completions", json=payload)
-            
+
             content_type = response.headers.get("content-type", "")
-            
+
             if response.status_code == 200:
                 # Verify it's actually JSON
                 if "application/json" not in content_type:
-                    return False, f"Expected JSON response but got {content_type}\nResponse: {response.text[:200]}"
-                
+                    return (
+                        False,
+                        f"Expected JSON response but got {content_type}\nResponse: {response.text[:200]}",
+                    )
+
                 try:
                     data = response.json()
                     if "choices" in data:
-                        return True, f"Connection successful (completion test passed)\nModel: {self.model_config.name}"
+                        return (
+                            True,
+                            f"Connection successful (completion test passed)\nModel: {self.model_config.name}",
+                        )
                     else:
                         return False, f"Unexpected response format: {list(data.keys())}"
                 except Exception as e:
                     return False, f"Failed to parse JSON: {e}\nResponse: {response.text[:200]}"
-            
+
             elif response.status_code == 401:
                 if "application/json" in content_type:
                     try:
                         error_data = response.json()
-                        return False, f"Authentication failed: {error_data.get('error', {}).get('message', 'Invalid API key')}"
+                        return (
+                            False,
+                            f"Authentication failed: {error_data.get('error', {}).get('message', 'Invalid API key')}",
+                        )
                     except:
                         pass
                 return False, "Authentication failed - invalid API key"
-            
+
             elif response.status_code == 404:
-                return False, f"Model '{self.model_config.name}' not found at {self.model_config.api_base}"
-            
+                return (
+                    False,
+                    f"Model '{self.model_config.name}' not found at {self.model_config.api_base}",
+                )
+
             else:
                 error_msg = f"API returned status {response.status_code}"
                 if "application/json" in content_type:
@@ -205,59 +219,59 @@ class ForgeRunner:
                     error_msg += f"\nContent-Type: {content_type}"
                     error_msg += f"\nResponse: {response.text[:200]}"
                 return False, error_msg
-        
+
         except httpx.ConnectError:
-            return False, f"Cannot connect to {self.model_config.api_base}\nCheck if the URL is correct and the server is running."
+            return (
+                False,
+                f"Cannot connect to {self.model_config.api_base}\nCheck if the URL is correct and the server is running.",
+            )
         except httpx.TimeoutException:
             return False, "Connection timeout - server took too long to respond"
         except Exception as e:
             return False, f"Completion test failed: {type(e).__name__}: {str(e)}"
-    
-    async def query_model(self, prompt: str) -> tuple[str, int, int]:
+
+    async def query_model(
+        self, prompt: str, system_prompt: Optional[str] = None
+    ) -> tuple[str, int, int]:
         """
         Query the model with a single prompt.
-        
+
         Args:
             prompt: The problem prompt to send
-            
+            system_prompt: Category-specific system prompt (uses default if None)
+
         Returns:
             Tuple of (response_text, input_tokens, output_tokens)
         """
         if not self.client:
             raise RuntimeError("Runner not initialized. Use async context manager.")
-        
+
+        if system_prompt is None:
+            system_prompt = (
+                "You are a precise mathematical reasoning engine. "
+                "Solve the given problem step by step. "
+                "Provide your final answer after 'ANSWER:' on its own line."
+            )
+
         payload = {
             "model": self.model_config.name,
             "messages": [
-                {
-                    "role": "system",
-                    "content": (
-                        "You are a precise mathematical reasoning engine. "
-                        "Solve the given problem step by step. "
-                        "Provide your final answer after 'ANSWER:' on its own line. "
-                        "The answer MUST be a plain number, fraction (like 3/7), or short phrase. "
-                        "Do NOT use LaTeX, dollar signs, \\frac, braces, or any formatting in your answer. "
-                        "Example correct format:\n"
-                        "ANSWER: 42\n"
-                        "ANSWER: -193/15\n"
-                        "ANSWER: Losing position"
-                    ),
-                },
+                {"role": "system", "content": system_prompt},
                 {"role": "user", "content": prompt},
             ],
             "max_tokens": self.model_config.max_tokens,
             "temperature": self.model_config.temperature,
         }
-        
+
         try:
             response = await self.client.post("/chat/completions", json=payload)
-            
+
             # Check if response is JSON
             content_type = response.headers.get("content-type", "")
-            
+
             if response.status_code != 200:
                 error_msg = f"API error {response.status_code}"
-                
+
                 if "application/json" in content_type:
                     try:
                         error_data = response.json()
@@ -270,10 +284,10 @@ class ForgeRunner:
                     # Non-JSON response (HTML, etc.)
                     error_msg += f": Received {content_type or 'unknown content type'}"
                     error_msg += f"\nResponse preview: {response.text[:200]}"
-                
+
                 self.errors.append(error_msg)
                 return f"[ERROR: {error_msg}]", 0, 0
-            
+
             # Try to parse JSON response
             try:
                 data = response.json()
@@ -283,12 +297,12 @@ class ForgeRunner:
                 error_msg += f"\nResponse: {response.text[:300]}"
                 self.errors.append(error_msg)
                 return f"[ERROR: {error_msg}]", 0, 0
-            
+
             # Extract content from response
             try:
                 message = data["choices"][0]["message"]
                 content = message.get("content")
-                
+
                 # Handle thinking/reasoning models (e.g., Qwen, DeepSeek)
                 # These models put the answer in 'content' and thinking in 'reasoning'
                 # If content is None but reasoning exists, check if we need more tokens
@@ -300,26 +314,28 @@ class ForgeRunner:
                         content = f"[Model reasoning incomplete - increase max_tokens]\nReasoning preview: {reasoning[:200]}"
                     else:
                         content = "[Empty response from model]"
-                
+
                 usage = data.get("usage", {})
                 input_tokens = usage.get("prompt_tokens", 0)
                 output_tokens = usage.get("completion_tokens", 0)
-                
+
                 # Track reasoning tokens if available
                 completion_details = usage.get("completion_tokens_details", {})
                 reasoning_tokens = completion_details.get("reasoning_tokens", 0)
                 if reasoning_tokens > 0:
                     # Add reasoning tokens to output count for cost calculation
                     output_tokens += reasoning_tokens
-                
+
                 return content, input_tokens, output_tokens
             except (KeyError, IndexError) as e:
                 error_msg = f"Unexpected response format: {e}"
-                error_msg += f"\nResponse keys: {list(data.keys()) if isinstance(data, dict) else 'N/A'}"
+                error_msg += (
+                    f"\nResponse keys: {list(data.keys()) if isinstance(data, dict) else 'N/A'}"
+                )
                 error_msg += f"\nResponse: {str(data)[:300]}"
                 self.errors.append(error_msg)
                 return f"[ERROR: {error_msg}]", 0, 0
-        
+
         except httpx.TimeoutException:
             self.errors.append("Request timeout - model took too long to respond")
             return "[TIMEOUT]", 0, 0
@@ -331,95 +347,168 @@ class ForgeRunner:
             error_msg = f"{type(e).__name__}: {str(e)}"
             self.errors.append(error_msg)
             return f"[ERROR: {error_msg}]", 0, 0
-    
+
     def extract_answer(self, response: str) -> str:
         """
         Extract the final answer from a model's response.
-        
-        Looks for 'ANSWER:' marker, falls back to last line if not found.
-        
+
+        Strict extraction — requires 'ANSWER:' marker. Returns empty
+        string if no marker is found (no fallback).
+
         Args:
             response: Full model response text
-            
+
         Returns:
-            Extracted answer string
+            Extracted answer string, or '' if no ANSWER: marker found
         """
         if not response or response.startswith("["):
             return response
-        
+
         import re as _re
 
         def _clean_answer(raw: str) -> str:
             """Strip LaTeX delimiters and common wrappers from an answer string."""
             s = raw.strip()
-            # Strip markdown/LaTeX math delimiters
-            s = _re.sub(r'^\$\$?\s*', '', s)
-            s = _re.sub(r'\s*\$\$?$', '', s)
-            s = _re.sub(r'^\\\(\s*', '', s)
-            s = _re.sub(r'\s*\\\)$', '', s)
-            s = _re.sub(r'^\\\[\s*', '', s)
-            s = _re.sub(r'\s*\\\]$', '', s)
-            # \frac{a}{b} -> a/b
-            s = _re.sub(r'\\frac\{([^}]*)\}\{([^}]*)\}', r'\1/\2', s)
-            # \text{...} -> ...
-            s = _re.sub(r'\\text\{([^}]*)\}', r'\1', s)
-            # Remaining \cmd and braces
-            s = _re.sub(r'^[}\s\\]+', '', s)
-            s = _re.sub(r'[}\s\\]+$', '', s)
+            s = _re.sub(r"^\$\$?\s*", "", s)
+            s = _re.sub(r"\s*\$\$?$", "", s)
+            s = _re.sub(r"^\\\(\s*", "", s)
+            s = _re.sub(r"\s*\\\)$", "", s)
+            s = _re.sub(r"^\\\[\s*", "", s)
+            s = _re.sub(r"\s*\\\]$", "", s)
+            s = _re.sub(r"\\frac\{([^}]*)\}\{([^}]*)\}", r"\1/\2", s)
+            s = _re.sub(r"\\text\{([^}]*)\}", r"\1", s)
+            s = _re.sub(r"^[}\s\\]+", "", s)
+            s = _re.sub(r"[}\s\\]+$", "", s)
             s = s.strip()
             return s
 
-        # Look for ANSWER: marker
-        lines = response.split('\n')
+        # Strict: only look for ANSWER: marker, take the LAST one
+        lines = response.split("\n")
         for line in reversed(lines):
-            if 'ANSWER:' in line:
-                answer = line.split('ANSWER:', 1)[1].strip()
+            if "ANSWER:" in line:
+                answer = line.split("ANSWER:", 1)[1].strip()
                 if answer:
-                    answer = _clean_answer(answer)
-                    if answer:
-                        return answer
-        
-        # Fall back to last non-empty line
-        for line in reversed(lines):
-            stripped = line.strip()
-            if stripped and not stripped.startswith('#'):
-                return _clean_answer(stripped)
-        
-        return response.strip()
-    
+                    return _clean_answer(answer)
+
+        return ""
+
+    def split_reasoning_answer(self, response: str) -> tuple[str, str]:
+        """
+        Split a model response into (reasoning, answer).
+
+        The answer is extracted strictly via extract_answer.
+        Reasoning is everything before the ANSWER: line.
+
+        Args:
+            response: Full model response text
+
+        Returns:
+            Tuple of (reasoning_text, answer_text)
+        """
+        if not response or response.startswith("["):
+            return ("", response)
+
+        lines = response.split("\n")
+        answer_line_idx = None
+        for i, line in enumerate(lines):
+            if "ANSWER:" in line:
+                answer_line_idx = i
+
+        if answer_line_idx is not None:
+            reasoning = "\n".join(lines[:answer_line_idx]).strip()
+            answer = lines[answer_line_idx].split("ANSWER:", 1)[1].strip()
+            import re as _re
+
+            answer = _re.sub(r"^\$\$?\s*", "", answer)
+            answer = _re.sub(r"\s*\$\$?$", "", answer)
+            answer = _re.sub(r"^\\\(\s*", "", answer)
+            answer = _re.sub(r"\s*\\\)$", "", answer)
+            answer = _re.sub(r"^\\\[\s*", "", answer)
+            answer = _re.sub(r"\s*\\\]$", "", answer)
+            answer = _re.sub(r"\\frac\{([^}]*)\}\{([^}]*)\}", r"\1/\2", answer)
+            answer = _re.sub(r"\\text\{([^}]*)\}", r"\1", answer)
+            answer = _re.sub(r"^[}\s\\]+", "", answer)
+            answer = _re.sub(r"[}\s\\]+$", "", answer)
+            return (reasoning, answer.strip())
+
+        return (response.strip(), "")
+
     async def run_single(
         self,
         problem: Problem,
         category: ForgeCategory,
+        timeout: Optional[int] = None,
     ) -> dict:
         """
         Run a single problem through the model and grade it.
-        
+
         Args:
             problem: The generated Problem instance
             category: The category instance for grading
-            
+            timeout: Per-question timeout in seconds.  None = no limit.
+
         Returns:
-            Dict with problem result details
+            Dict with problem result details including reasoning
         """
         start_time = time.time()
-        response, input_tokens, output_tokens = await self.query_model(problem.question)
+        sys_prompt = category.system_prompt()
+
+        try:
+            if timeout is not None:
+                response, input_tokens, output_tokens = await asyncio.wait_for(
+                    self.query_model(problem.question, system_prompt=sys_prompt),
+                    timeout=float(timeout),
+                )
+            else:
+                response, input_tokens, output_tokens = await self.query_model(
+                    problem.question, system_prompt=sys_prompt
+                )
+        except asyncio.TimeoutError:
+            elapsed = time.time() - start_time
+            timeout_msg = (
+                f"[TIMEOUT] {problem.category} | difficulty {problem.difficulty} "
+                f"| elapsed {elapsed:.1f}s"
+            )
+            self.errors.append(timeout_msg)
+            return {
+                "question": problem.question,
+                "expected": problem.answer,
+                "response": timeout_msg,
+                "extracted": timeout_msg,
+                "reasoning": "",
+                "correct": False,
+                "difficulty": problem.difficulty,
+                "iteration": problem.iteration,
+                "input_tokens": 0,
+                "output_tokens": 0,
+                "elapsed": elapsed,
+                "is_error": True,
+                "error_message": timeout_msg,
+            }
+
         elapsed = time.time() - start_time
-        
+
         self.total_input_tokens += input_tokens
         self.total_output_tokens += output_tokens
-        
-        extracted = self.extract_answer(response)
-        
-        # Only grade if we got a real response
+
         is_error = response.startswith("[ERROR") or response.startswith("[TIMEOUT")
+
+        # Split reasoning from answer
+        reasoning = ""
+        extracted = ""
+        if not is_error:
+            reasoning, extracted = self.split_reasoning_answer(response)
+        else:
+            extracted = response
+
         correct = False if is_error else category.grade(extracted, problem.answer)
-        
+
         return {
             "question": problem.question,
             "expected": problem.answer,
             "response": response,
             "extracted": extracted,
+            "reasoning": reasoning,
             "correct": correct,
             "difficulty": problem.difficulty,
             "iteration": problem.iteration,
@@ -429,19 +518,21 @@ class ForgeRunner:
             "is_error": is_error,
             "error_message": response if is_error else None,
         }
-    
+
     async def run_category(
         self,
         category: ForgeCategory,
         difficulty_distribution: dict[int, int],
+        timeout: Optional[int] = None,
     ) -> CategoryResult:
         """
         Run all problems for a category across difficulty levels.
-        
+
         Args:
             category: The category instance to run
             difficulty_distribution: {difficulty: count} mapping
-            
+            timeout: Per-question timeout in seconds passed to run_single().
+
         Returns:
             CategoryResult with aggregated statistics
         """
@@ -450,22 +541,18 @@ class ForgeRunner:
             for iteration in range(count):
                 problem = category.generate(difficulty, iteration)
                 problems.append(problem)
-        
-        # Execute with concurrency limit
-        semaphore = asyncio.Semaphore(self.concurrency)
-        
+
+        # Execute with shared concurrency limit across all categories
         async def run_with_semaphore(problem):
-            async with semaphore:
-                return await self.run_single(problem, category)
-        
-        results = await asyncio.gather(
-            *[run_with_semaphore(p) for p in problems]
-        )
-        
+            async with self.semaphore:
+                return await self.run_single(problem, category, timeout=timeout)
+
+        results = await asyncio.gather(*[run_with_semaphore(p) for p in problems])
+
         # Aggregate results
         accuracy_by_difficulty = {}
         category_errors = []
-        
+
         for result in results:
             diff = result["difficulty"]
             if diff not in accuracy_by_difficulty:
@@ -473,20 +560,20 @@ class ForgeRunner:
             accuracy_by_difficulty[diff]["total"] += 1
             if result["correct"]:
                 accuracy_by_difficulty[diff]["correct"] += 1
-            
+
             if result.get("is_error") and result.get("error_message"):
                 category_errors.append(result["error_message"])
-        
+
         total = len(results)
         correct = sum(1 for r in results if r["correct"])
-        
+
         # Compute weighted category score
         category_score = self.compute_category_score(accuracy_by_difficulty)
         cliff_index = self.compute_cliff_index(accuracy_by_difficulty)
-        
+
         # Deduplicate errors
         unique_errors = list(set(category_errors))[:5]  # Keep top 5 unique errors
-        
+
         return CategoryResult(
             name=category.name,
             display_name=category.display_name,
@@ -496,8 +583,9 @@ class ForgeRunner:
             category_score=category_score,
             cliff_index=cliff_index,
             errors=unique_errors,
+            question_results=list(results),
         )
-    
+
     @staticmethod
     def compute_category_score(
         accuracy_by_difficulty: dict[int, dict],
@@ -505,32 +593,32 @@ class ForgeRunner:
     ) -> float:
         """
         Compute weighted category score with extrapolation bias.
-        
+
         Formula: C_c = sum(alpha^d * S_{c,d}) / sum(alpha^d)
         where S_{c,d} is accuracy at difficulty d.
-        
+
         Args:
             accuracy_by_difficulty: {difficulty: {"correct": int, "total": int}}
             alpha: Extrapolation weight parameter (default 1.5)
-            
+
         Returns:
             Weighted category score between 0.0 and 1.0
         """
         if not accuracy_by_difficulty:
             return 0.0
-        
+
         numerator = 0.0
         denominator = 0.0
-        
+
         for difficulty, stats in accuracy_by_difficulty.items():
             if stats["total"] > 0:
                 accuracy = stats["correct"] / stats["total"]
-                weight = alpha ** difficulty
+                weight = alpha**difficulty
                 numerator += weight * accuracy
                 denominator += weight
-        
+
         return numerator / denominator if denominator > 0 else 0.0
-    
+
     @staticmethod
     def compute_cliff_index(
         accuracy_by_difficulty: dict[int, dict],
@@ -538,23 +626,23 @@ class ForgeRunner:
     ) -> Optional[int]:
         """
         Find the difficulty level where accuracy drops by more than threshold.
-        
+
         The "Complexity Cliff Index" identifies where a model's internal
         world-model collapses, as described in the Illusion of Thinking.
-        
+
         Args:
             accuracy_by_difficulty: {difficulty: {"correct": int, "total": int}}
             threshold: Accuracy drop threshold (default 0.3 for 30%)
-            
+
         Returns:
             Difficulty level where cliff occurs, or None if no cliff detected
         """
         if not accuracy_by_difficulty:
             return None
-        
+
         sorted_diffs = sorted(accuracy_by_difficulty.keys())
         prev_accuracy = None
-        
+
         for diff in sorted_diffs:
             stats = accuracy_by_difficulty[diff]
             if stats["total"] > 0:
@@ -563,39 +651,52 @@ class ForgeRunner:
                     if prev_accuracy - accuracy > threshold:
                         return diff
                 prev_accuracy = accuracy
-        
+
         return None
-    
+
     def compute_cost(self) -> float:
         """
         Compute estimated API cost based on token counts.
-        
+
         Returns:
             Estimated cost in dollars
         """
         input_cost = (self.total_input_tokens / 1_000_000) * self.model_config.input_cost_per_1m
         output_cost = (self.total_output_tokens / 1_000_000) * self.model_config.output_cost_per_1m
         return input_cost + output_cost
-    
+
     @staticmethod
-    def compute_forge_score(category_results: list[CategoryResult]) -> float:
+    def compute_forge_score(
+        category_results: list[CategoryResult],
+        alpha: float = 1.5,
+    ) -> float:
+        """
+        Compute the FORGE aggregate score as the mean of per-category weighted
+        scores.  Each category score is already computed by compute_category_score()
+        using the same alpha-weighted formula (C_c = Σ(α^d · S_{c,d}) / Σ(α^d)),
+        so the aggregate is the unweighted mean of those category scores.
+
+        This matches the README specification: the FORGE Score is the average of
+        all C_c values, where each C_c is itself extrapolation-weighted.
+        """
         if not category_results:
             return 0.0
         scores = [cr.category_score for cr in category_results]
         return sum(scores) / len(scores)
-    
+
     @staticmethod
-    def compute_confidence_interval(category_results: list[CategoryResult],
-                                     n_bootstrap: int = 1000, ci: float = 0.95) -> dict:
+    def compute_confidence_interval(
+        category_results: list[CategoryResult], n_bootstrap: int = 1000, ci: float = 0.95
+    ) -> dict:
         """
         Bootstrap confidence intervals by resampling per-question outcomes.
-        
+
         Returns {score, ci_lower, ci_upper, margin} for the FORGE score
         and per-category scores.
         """
         import random as _random
         import math
-        
+
         all_records = []
         for cr in category_results:
             for diff, stats in cr.accuracy_by_difficulty.items():
@@ -603,18 +704,18 @@ class ForgeRunner:
                 total = stats["total"]
                 for i in range(total):
                     all_records.append((cr.name, diff, 1 if i < correct else 0))
-        
+
         forge_samples = []
         cat_samples = {cr.name: [] for cr in category_results}
         n = len(all_records)
-        
+
         for _ in range(n_bootstrap):
             sample = [_random.choice(all_records) for _ in range(n)]
             by_cat = {}
             by_cat_correct = {}
             by_cat_total = {}
             by_cat_diff = {}
-            
+
             for cat_name, diff, outcome in sample:
                 if cat_name not in by_cat_diff:
                     by_cat_diff[cat_name] = {}
@@ -623,34 +724,34 @@ class ForgeRunner:
                 by_cat_diff[cat_name][diff]["total"] += 1
                 if outcome:
                     by_cat_diff[cat_name][diff]["correct"] += 1
-            
+
             cat_scores = []
             for cr in category_results:
                 diff_data = by_cat_diff.get(cr.name, {})
                 score = ForgeRunner.compute_category_score(diff_data)
                 cat_scores.append(score)
                 cat_samples[cr.name].append(score)
-            
+
             forge_bs = sum(cat_scores) / len(cat_scores) if cat_scores else 0.0
             forge_samples.append(forge_bs)
-        
+
         def _ci(samples, alpha):
             sorted_s = sorted(samples)
             low_idx = int(len(sorted_s) * (alpha / 2))
             high_idx = int(len(sorted_s) * (1 - alpha / 2))
             return sorted_s[low_idx], sorted_s[high_idx]
-        
+
         alpha = 1 - ci
         fl, fh = _ci(forge_samples, alpha)
         forge_mean = sum(forge_samples) / len(forge_samples)
-        
+
         cat_ci = {}
         for cr in category_results:
             if cat_samples[cr.name]:
                 cl, ch = _ci(cat_samples[cr.name], alpha)
                 cm = sum(cat_samples[cr.name]) / len(cat_samples[cr.name])
                 cat_ci[cr.name] = {"score": cm, "ci_lower": cl, "ci_upper": ch}
-        
+
         return {
             "forge_score": forge_mean,
             "ci_lower": fl,
@@ -660,15 +761,15 @@ class ForgeRunner:
             "bootstrap_samples": n_bootstrap,
             "categories": cat_ci,
         }
-    
+
     @staticmethod
     def compute_interpolation_extrapolation(
         category_results: list[CategoryResult],
     ) -> tuple[float, float]:
         """
-        Compute separate scores for interpolation (Easy/Medium) and 
+        Compute separate scores for interpolation (Easy/Medium) and
         extrapolation (Hard/Expert) zones.
-        
+
         Returns:
             Tuple of (interpolation_score, extrapolation_score)
         """
@@ -676,7 +777,7 @@ class ForgeRunner:
         interpolation_total = 0
         extrapolation_correct = 0
         extrapolation_total = 0
-        
+
         for result in category_results:
             for diff, stats in result.accuracy_by_difficulty.items():
                 if diff <= 2:  # Easy/Medium
@@ -685,8 +786,8 @@ class ForgeRunner:
                 else:  # Hard/Expert
                     extrapolation_correct += stats["correct"]
                     extrapolation_total += stats["total"]
-        
+
         interp = interpolation_correct / interpolation_total if interpolation_total > 0 else 0.0
         extra = extrapolation_correct / extrapolation_total if extrapolation_total > 0 else 0.0
-        
+
         return interp, extra

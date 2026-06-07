@@ -108,14 +108,6 @@ async def run_evaluation(req: RunRequest):
 
                 category_list = [c for c in run_config.categories if c in CATEGORIES]
 
-                start_time = time.time()
-                completed = 0
-
-                # Results accumulator per category
-                cat_results = {}
-                for cat_name in category_list:
-                    cat_results[cat_name] = {"correct": 0, "total": 0, "by_diff": {}}
-
                 # Build all problems upfront
                 all_problems = []
                 for cat_name in category_list:
@@ -131,7 +123,7 @@ async def run_evaluation(req: RunRequest):
                 start_time = time.time()
                 completed = 0
 
-                # Results accumulator per category
+                # Results accumulator per category (single initialisation with by_diff sub-keys)
                 cat_results = {}
                 for cat_name in category_list:
                     cat_results[cat_name] = {"correct": 0, "total": 0, "by_diff": {}}

@@ -22,13 +22,20 @@ class ArithmeticChainCategory(ForgeCategory):
         return "Arithmetic Chain Composition"
     
     def get_difficulty_params(self, difficulty: int) -> dict:
-        """Return parameters for each difficulty level."""
+        """Return parameters for each difficulty level.
+
+        Notes on operator choices:
+        - "//" is used as the display symbol for true division (÷), NOT floor
+          division.  The evaluator maps it to "/" on Fraction objects.
+        - "%" (modulo) is intentionally excluded from all difficulty levels
+          because Python's Fraction.__mod__ raises TypeError.
+        """
         params = {
             1: {"n_steps": 1, "operations": ["+", "-"], "magnitude": 10, "use_fractions": False},
             2: {"n_steps": 3, "operations": ["+", "-", "*"], "magnitude": 50, "use_fractions": False},
             3: {"n_steps": 5, "operations": ["+", "-", "*", "//"], "magnitude": 100, "use_fractions": True},
             4: {"n_steps": 10, "operations": ["+", "-", "*", "//", "**"], "magnitude": 500, "use_fractions": True},
-            5: {"n_steps": 25, "operations": ["+", "-", "*", "//", "**", "%"], "magnitude": 1000, "use_fractions": True},
+            5: {"n_steps": 25, "operations": ["+", "-", "*", "//", "**"], "magnitude": 1000, "use_fractions": True},
         }
         return params.get(difficulty, params[3])
     
@@ -92,10 +99,12 @@ class ArithmeticChainCategory(ForgeCategory):
         
         expression = "".join(parts)
         
-        # Evaluate expression with standard operator precedence (PEMDAS)
-        # Build a Python-evaluable expression
-        # NOTE: "//" in this category means regular division, not floor division
-        py_ops = {"+": "+", "-": "-", "*": "*", "//": "/", "/": "/", "**": "**", "%": "%"}
+        # Evaluate expression with standard operator precedence (PEMDAS).
+        # "//": display symbol for true division (÷) — maps to "/" on Fractions.
+        # "**": exponentiation — operand is always a small integer (2–3) so
+        #       Fraction ** int is safe and exact.
+        # "%" is never present (removed from all difficulty levels).
+        py_ops = {"+": "+", "-": "-", "*": "*", "//": "/", "/": "/", "**": "**"}
         py_parts = []
         for val, op in steps:
             if op is None:
@@ -104,7 +113,7 @@ class ArithmeticChainCategory(ForgeCategory):
                 py_sym = py_ops.get(op, op)
                 py_parts.append(f" {py_sym} Fraction({val.numerator},{val.denominator})")
         py_expr = "".join(py_parts)
-        
+
         answer = eval(py_expr, {"Fraction": Fraction})
         
         question = (
