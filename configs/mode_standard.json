@@ -1,0 +1,12 @@
+{
+  "mode": "standard",
+  "questions_per_category": 100,
+  "difficulty_distribution": {
+    "1": 20,
+    "2": 20,
+    "3": 30,
+    "4": 30
+  },
+  "timeout_seconds": 120,
+  "description": "Default evaluation tier for researchers comparing ablations. 95% CI, ±9.8% margin of error."
+}

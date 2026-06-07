@@ -1,0 +1,1148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FORGE — Researcher Tool</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Serif+Display&display=swap');
+
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+:root {
+  --ink: #0A1628;
+  --amber: #E8A020;
+  --bg: #FAFAFA;
+  --surface: #FFFFFF;
+  --border: #E5E5E5;
+  --text: #1A1A1A;
+  --text-secondary: #6B6B6B;
+  --text-tertiary: #999999;
+  --success: #2D8A4E;
+  --error: #C43E3E;
+  --font-serif: 'DM Serif Display', Georgia, serif;
+  --font-mono: 'DM Mono', 'SF Mono', 'Fira Code', monospace;
+  --unit: 8px;
+}
+
+html { font-size: 16px; -webkit-font-smoothing: antialiased; }
+
+body {
+  font-family: var(--font-mono);
+  font-weight: 400;
+  color: var(--text);
+  background: var(--bg);
+  line-height: 1.5;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* ─── Layout ─── */
+
+.app {
+  display: flex;
+  height: 100vh;
+}
+
+/* ─── Left Panel ─── */
+
+.panel-left {
+  width: 320px;
+  min-width: 320px;
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  overflow-y: auto;
+  padding: calc(var(--unit) * 3);
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--unit) * 3);
+}
+
+.panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: calc(var(--unit) * 2);
+  border-bottom: 1px solid var(--border);
+}
+
+.panel-logo {
+  font-family: var(--font-serif);
+  font-size: 24px;
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.btn-link {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--text-secondary);
+  text-decoration: none;
+  transition: color 150ms ease;
+}
+
+.btn-link:hover { color: var(--ink); }
+
+/* ─── Form fields ─── */
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--unit) * 0.5);
+}
+
+.field-label {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.field-hint {
+  font-size: 12px;
+  color: var(--text-tertiary);
+  line-height: 1.4;
+}
+
+.field-input {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--text);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  padding: calc(var(--unit) * 1) calc(var(--unit) * 1.5);
+  width: 100%;
+  transition: border-color 150ms ease;
+}
+
+.field-input::placeholder { color: var(--text-tertiary); }
+.field-input:focus { outline: none; border-color: var(--ink); }
+
+.field-input.error { border-color: var(--error); }
+.field-input.valid { border-color: var(--success); }
+
+.field-error {
+  font-size: 12px;
+  color: var(--error);
+  display: none;
+}
+
+.field-error.visible { display: block; }
+
+/* ─── Password toggle ─── */
+
+.password-wrap {
+  position: relative;
+}
+
+.password-wrap .field-input { padding-right: calc(var(--unit) * 4); }
+
+.password-toggle {
+  position: absolute;
+  right: calc(var(--unit) * 1);
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-tertiary);
+  font-size: 14px;
+  padding: 4px;
+  transition: color 150ms ease;
+}
+
+.password-toggle:hover { color: var(--text); }
+
+/* ─── Mode pills ─── */
+
+.mode-pills {
+  display: flex;
+  gap: calc(var(--unit) * 1);
+}
+
+.mode-pill {
+  flex: 1;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 500;
+  text-align: center;
+  padding: calc(var(--unit) * 1) calc(var(--unit) * 1.5);
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 150ms ease;
+}
+
+.mode-pill:hover { border-color: var(--ink); color: var(--text); }
+
+.mode-pill.active {
+  background: var(--ink);
+  color: #fff;
+  border-color: var(--ink);
+}
+
+.mode-pill:focus-visible {
+  outline: 1px solid var(--ink);
+  outline-offset: 2px;
+}
+
+.mode-info {
+  font-size: 12px;
+  color: var(--text-tertiary);
+  margin-top: calc(var(--unit) * 0.5);
+}
+
+/* ─── Seed row ─── */
+
+.seed-row {
+  display: flex;
+  gap: calc(var(--unit) * 1);
+  align-items: flex-end;
+}
+
+.seed-row .field { flex: 1; }
+
+.btn-icon {
+  font-family: var(--font-mono);
+  font-size: 16px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: border-color 150ms ease, color 150ms ease;
+  flex-shrink: 0;
+}
+
+.btn-icon:hover { border-color: var(--ink); color: var(--ink); }
+
+/* ─── Cost row ─── */
+
+.cost-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: calc(var(--unit) * 2);
+}
+
+/* ─── Run button ─── */
+
+.btn-run {
+  font-family: var(--font-serif);
+  font-size: 16px;
+  color: #fff;
+  background: var(--ink);
+  border: none;
+  width: 100%;
+  height: 48px;
+  cursor: pointer;
+  transition: opacity 150ms ease, transform 100ms ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-run:hover { opacity: 0.9; }
+.btn-run:active { transform: scale(0.995); }
+
+.btn-run:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.btn-run.loading .btn-run-text { opacity: 0; }
+
+.btn-run-dots {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.btn-run.loading .btn-run-dots { opacity: 1; }
+
+.btn-run-dot {
+  width: 6px;
+  height: 6px;
+  background: #fff;
+  border-radius: 50%;
+  animation: pulse 1.2s ease-in-out infinite;
+}
+
+.btn-run-dot:nth-child(2) { animation-delay: 0.2s; }
+.btn-run-dot:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes pulse {
+  0%, 80%, 100% { opacity: 0.2; transform: scale(0.8); }
+  40% { opacity: 1; transform: scale(1); }
+}
+
+/* ─── Progress ─── */
+
+.progress-section {
+  display: none;
+  flex-direction: column;
+  gap: calc(var(--unit) * 1.5);
+  padding-top: calc(var(--unit) * 2);
+  border-top: 1px solid var(--border);
+}
+
+.progress-section.active { display: flex; }
+
+.progress-line {
+  height: 1px;
+  background: var(--border);
+  position: relative;
+  overflow: hidden;
+}
+
+.progress-fill {
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  background: var(--ink);
+  width: 0;
+  transition: width 300ms ease;
+}
+
+.progress-label {
+  font-size: 13px;
+  color: var(--text);
+}
+
+.progress-detail {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.progress-time {
+  font-size: 12px;
+  color: var(--text-tertiary);
+}
+
+.btn-cancel {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--text-secondary);
+  background: transparent;
+  border: 1px solid var(--border);
+  padding: calc(var(--unit) * 0.75) calc(var(--unit) * 1.5);
+  cursor: pointer;
+  transition: border-color 150ms ease, color 150ms ease;
+  align-self: flex-start;
+}
+
+.btn-cancel:hover { border-color: var(--error); color: var(--error); }
+
+/* ─── Right Panel ─── */
+
+.panel-right {
+  flex: 1;
+  overflow-y: auto;
+  padding: calc(var(--unit) * 4);
+  display: flex;
+  flex-direction: column;
+}
+
+/* ─── Empty state ─── */
+
+.empty-state {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: calc(var(--unit) * 2);
+}
+
+.empty-logo {
+  font-family: var(--font-serif);
+  font-size: 48px;
+  color: var(--border);
+}
+
+.empty-text {
+  font-size: 14px;
+  color: var(--text-tertiary);
+}
+
+/* ─── Live feed ─── */
+
+.feed {
+  display: none;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  overflow-y: auto;
+  padding-bottom: calc(var(--unit) * 4);
+}
+
+.feed.active { display: flex; }
+
+.feed-item {
+  font-size: 12px;
+  padding: calc(var(--unit) * 1) calc(var(--unit) * 1.5);
+  border-left: 2px solid transparent;
+  opacity: 0;
+  transform: translateY(4px);
+  animation: feedIn 200ms ease forwards;
+  display: flex;
+  gap: calc(var(--unit) * 2);
+  align-items: baseline;
+}
+
+@keyframes feedIn {
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.feed-item.correct { border-left-color: var(--success); }
+.feed-item.wrong { border-left-color: var(--error); }
+.feed-item.error { border-left-color: var(--amber); }
+
+.feed-cat {
+  color: var(--text-secondary);
+  min-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.feed-diff {
+  color: var(--text-tertiary);
+  min-width: 40px;
+}
+
+.feed-status {
+  font-weight: 500;
+  min-width: 20px;
+}
+
+.feed-status.ok { color: var(--success); }
+.feed-status.fail { color: var(--error); }
+.feed-status.err { color: var(--amber); }
+
+.feed-time {
+  color: var(--text-tertiary);
+  margin-left: auto;
+}
+
+/* ─── Results ─── */
+
+.results {
+  display: none;
+  flex-direction: column;
+  gap: calc(var(--unit) * 4);
+}
+
+.results.active { display: flex; }
+
+.metric-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: calc(var(--unit) * 2);
+}
+
+.metric-card {
+  border: 1px solid var(--border);
+  padding: calc(var(--unit) * 2.5);
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--unit) * 0.5);
+}
+
+.metric-label {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.metric-value {
+  font-family: var(--font-mono);
+  font-size: 28px;
+  font-weight: 500;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+.metric-value.amber { color: var(--amber); }
+
+.metric-sub {
+  font-size: 12px;
+  color: var(--text-tertiary);
+}
+
+/* ─── Category table ─── */
+
+.section-title {
+  font-family: var(--font-serif);
+  font-size: 18px;
+  color: var(--ink);
+  margin-bottom: calc(var(--unit) * 2);
+}
+
+.cat-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.cat-table th {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  text-align: left;
+  padding: calc(var(--unit) * 1) calc(var(--unit) * 1.5);
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+}
+
+.cat-table th:hover { color: var(--text); }
+
+.cat-table td {
+  font-size: 13px;
+  padding: calc(var(--unit) * 1.5) calc(var(--unit) * 1.5);
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+}
+
+.cat-table tr { cursor: pointer; transition: background 150ms ease; }
+.cat-table tr:hover { background: #F7F8FA; }
+
+.tier-squares {
+  display: flex;
+  gap: 3px;
+}
+
+.tier-sq {
+  width: 14px;
+  height: 14px;
+  border: 1px solid var(--border);
+  background: transparent;
+}
+
+.tier-sq.pass { background: var(--ink); border-color: var(--ink); }
+
+/* ─── Cliff chart ─── */
+
+.cliff-chart {
+  margin-top: calc(var(--unit) * 2);
+}
+
+.cliff-svg {
+  width: 100%;
+  height: 160px;
+}
+
+.cliff-line {
+  fill: none;
+  stroke: var(--ink);
+  stroke-width: 2;
+}
+
+.cliff-dot {
+  fill: var(--ink);
+}
+
+.cliff-zone {
+  fill: var(--amber);
+  opacity: 0.15;
+}
+
+.cliff-marker {
+  stroke: var(--amber);
+  stroke-width: 1.5;
+  stroke-dasharray: 4 3;
+}
+
+.cliff-label {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  fill: var(--amber);
+}
+
+.axis-label {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  fill: var(--text-tertiary);
+}
+
+/* ─── Export row ─── */
+
+.export-row {
+  display: flex;
+  gap: calc(var(--unit) * 2);
+  padding-top: calc(var(--unit) * 3);
+  border-top: 1px solid var(--border);
+}
+
+.btn-export {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--text-secondary);
+  background: transparent;
+  border: 1px solid var(--border);
+  padding: calc(var(--unit) * 1) calc(var(--unit) * 2);
+  cursor: pointer;
+  transition: border-color 150ms ease, color 150ms ease;
+}
+
+.btn-export:hover { border-color: var(--ink); color: var(--ink); }
+.btn-export.copied { color: var(--success); border-color: var(--success); }
+
+/* ─── Responsive ─── */
+
+@media (max-width: 900px) {
+  .app { flex-direction: column; height: auto; min-height: 100vh; }
+  .panel-left { width: 100%; min-width: 0; border-right: none; border-bottom: 1px solid var(--border); }
+  .panel-right { min-height: 60vh; }
+  .metric-row { grid-template-columns: repeat(2, 1fr); }
+}
+</style>
+</head>
+<body>
+
+<div class="app">
+  <!-- ─── Left Panel ─── -->
+  <div class="panel-left">
+    <div class="panel-header">
+      <a href="index.html" class="panel-logo">FORGE</a>
+      <a href="https://github.com/mohamedhossammohamed/FORGE" class="btn-link" target="_blank">GitHub</a>
+    </div>
+
+    <div class="field">
+      <label class="field-label" for="model-name">Model name</label>
+      <input type="text" class="field-input" id="model-name" placeholder="e.g. mistralai/mistral-7b-instruct" value="qwen/qwen3-235b-a22b-thinking-2507">
+      <span class="field-error" id="model-error">Model name is required</span>
+    </div>
+
+    <div class="field">
+      <label class="field-label" for="api-base">API Base URL</label>
+      <input type="text" class="field-input" id="api-base" placeholder="https://openrouter.ai/api/v1" value="https://openrouter.ai/api/v1">
+    </div>
+
+    <div class="field">
+      <label class="field-label" for="api-key">API Key</label>
+      <div class="password-wrap">
+        <input type="password" class="field-input" id="api-key" placeholder="sk-...">
+        <button class="password-toggle" id="toggle-key" title="Show/hide">👁</button>
+      </div>
+      <span class="field-error" id="key-error">API key is required</span>
+    </div>
+
+    <div class="field">
+      <label class="field-label">Run mode</label>
+      <div class="mode-pills">
+        <button class="mode-pill active" data-mode="nano">nano</button>
+        <button class="mode-pill" data-mode="quick">quick</button>
+        <button class="mode-pill" data-mode="standard">standard</button>
+      </div>
+      <span class="mode-info" id="mode-info">5 questions · ~30s · <$0.01</span>
+    </div>
+
+    <div class="seed-row">
+      <div class="field">
+        <label class="field-label" for="seed">Seed</label>
+        <input type="number" class="field-input" id="seed" value="42" step="1">
+      </div>
+      <button class="btn-icon" id="randomize-seed" title="Randomize">↻</button>
+    </div>
+    <span class="field-hint">Same seed = same questions for all models</span>
+
+    <div class="cost-row">
+      <div class="field">
+        <label class="field-label" for="cost-in">Input $/1M</label>
+        <input type="number" class="field-input" id="cost-in" value="0" step="0.01" min="0">
+      </div>
+      <div class="field">
+        <label class="field-label" for="cost-out">Output $/1M</label>
+        <input type="number" class="field-input" id="cost-out" value="0" step="0.01" min="0">
+      </div>
+    </div>
+
+    <button class="btn-run" id="btn-run">
+      <span class="btn-run-text">Run FORGE</span>
+      <span class="btn-run-dots">
+        <span class="btn-run-dot"></span>
+        <span class="btn-run-dot"></span>
+        <span class="btn-run-dot"></span>
+      </span>
+    </button>
+
+    <div class="progress-section" id="progress">
+      <div class="progress-line"><div class="progress-fill" id="progress-fill"></div></div>
+      <div class="progress-label" id="progress-label">Connecting...</div>
+      <div class="progress-detail" id="progress-detail"></div>
+      <div class="progress-time" id="progress-time"></div>
+      <button class="btn-cancel" id="btn-cancel">Cancel run</button>
+    </div>
+  </div>
+
+  <!-- ─── Right Panel ─── -->
+  <div class="panel-right">
+    <!-- Empty state -->
+    <div class="empty-state" id="empty-state">
+      <div class="empty-logo">FORGE</div>
+      <div class="empty-text">Configure a run on the left to begin.</div>
+    </div>
+
+    <!-- Live feed -->
+    <div class="feed" id="feed"></div>
+
+    <!-- Results -->
+    <div class="results" id="results">
+      <div class="metric-row" id="metrics"></div>
+      <div>
+        <div class="section-title">Category Breakdown</div>
+        <table class="cat-table" id="cat-table">
+          <thead>
+            <tr>
+              <th data-sort="name">Category</th>
+              <th>Tiers</th>
+              <th data-sort="score">Score</th>
+              <th data-sort="correct">Correct</th>
+            </tr>
+          </thead>
+          <tbody id="cat-tbody"></tbody>
+        </table>
+      </div>
+      <div class="cliff-chart">
+        <div class="section-title">Cliff Index</div>
+        <svg class="cliff-svg" id="cliff-svg" viewBox="0 0 600 160"></svg>
+      </div>
+      <div class="export-row">
+        <button class="btn-export" data-export="json">Copy results as JSON</button>
+        <button class="btn-export" data-export="markdown">Export Markdown table</button>
+        <button class="btn-export" data-export="cli">Copy CLI command used</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ─── Mode configs ───
+const MODES = {
+  nano: { label: "5 questions · ~30s · <$0.01", categories: ["arithmetic_chain","mod_exp","game_nim","info_entropy","combinatorics_stars"], dist: {3:1}, per: 1 },
+  quick: { label: "250 questions · ~5 min · ~$0.10", categories: "all", dist: {3:5, 4:5}, per: 10 },
+  standard: { label: "2,500 questions · ~1 hr · ~$1.00", categories: "all", dist: {1:20, 2:20, 3:30, 4:30}, per: 100 },
+};
+
+const ALL_CATEGORIES = [
+  "arithmetic_chain","mod_exp","combinatorics_stars","game_nim","info_entropy",
+  "matrix_det","linear_systems","jordan_normal","vector_div","polynomial_roots",
+  "algebra_groups","diophantine","crypto_rsa","taylor_series","diff_eq_rlc",
+  "finance_math","prob_bayes","boolean_kmap","signal_dft","geo_polygon",
+  "graph_shortest_path","formal_grammars","quantum_amplitudes","chess_mate","algorithmic_trace"
+];
+
+const CATEGORY_DISPLAY = {
+  arithmetic_chain:"Arithmetic Chain", mod_exp:"Modular Exponentiation", combinatorics_stars:"Combinatorics",
+  game_nim:"Nim States", info_entropy:"Shannon Entropy", matrix_det:"Matrix Determinants",
+  linear_systems:"Linear Systems", jordan_normal:"Jordan Normal Form", vector_div:"Vector Divergence",
+  polynomial_roots:"Polynomial Roots", algebra_groups:"Group Orders", diophantine:"Diophantine Equations",
+  crypto_rsa:"RSA Arithmetic", taylor_series:"Taylor Series", diff_eq_rlc:"RLC Circuits",
+  finance_math:"Financial Math", prob_bayes:"Bayesian Updating", boolean_kmap:"Boolean Minimization",
+  signal_dft:"DFT", geo_polygon:"Polygon Area", graph_shortest_path:"Shortest Path",
+  formal_grammars:"Formal Grammars", quantum_amplitudes:"Quantum States", chess_mate:"Chess Mate-in-N",
+  algorithmic_trace:"Algorithmic Trace"
+};
+
+let currentMode = "nano";
+let running = false;
+let abortController = null;
+let startTime = 0;
+let timerInterval = null;
+
+// ─── Mode pills ───
+document.querySelectorAll(".mode-pill").forEach(btn => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll(".mode-pill").forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+    currentMode = btn.dataset.mode;
+    document.getElementById("mode-info").textContent = MODES[currentMode].label;
+  });
+});
+
+// ─── Password toggle ───
+document.getElementById("toggle-key").addEventListener("click", () => {
+  const input = document.getElementById("api-key");
+  input.type = input.type === "password" ? "text" : "password";
+});
+
+// ─── Randomize seed ───
+document.getElementById("randomize-seed").addEventListener("click", () => {
+  document.getElementById("seed").value = crypto.getRandomValues(new BigUint64Array(1))[0].toString();
+});
+
+// ─── Run ───
+document.getElementById("btn-run").addEventListener("click", startRun);
+document.getElementById("btn-cancel").addEventListener("click", cancelRun);
+
+async function startRun() {
+  // Validate
+  let valid = true;
+  const modelName = document.getElementById("model-name").value.trim();
+  const apiKey = document.getElementById("api-key").value.trim();
+
+  if (!modelName) { showFieldError("model-error", "model-name"); valid = false; }
+  else { hideFieldError("model-error", "model-name"); }
+
+  if (!apiKey) { showFieldError("key-error", "api-key"); valid = false; }
+  else { hideFieldError("key-error", "api-key"); }
+
+  if (!valid) return;
+
+  running = true;
+  const btn = document.getElementById("btn-run");
+  btn.classList.add("loading");
+  btn.disabled = true;
+
+  // Show progress
+  const progress = document.getElementById("progress");
+  progress.classList.add("active");
+
+  // Show feed, hide empty/results
+  document.getElementById("empty-state").style.display = "none";
+  document.getElementById("results").classList.remove("active");
+  const feed = document.getElementById("feed");
+  feed.classList.add("active");
+  feed.innerHTML = "";
+
+  abortController = new AbortController();
+  startTime = Date.now();
+  timerInterval = setInterval(updateTimer, 1000);
+
+  const config = {
+    model: modelName,
+    api_base: document.getElementById("api-base").value.trim(),
+    api_key: apiKey,
+    seed: parseInt(document.getElementById("seed").value) || 42,
+    mode: currentMode,
+    input_cost: parseFloat(document.getElementById("cost-in").value) || 0,
+    output_cost: parseFloat(document.getElementById("cost-out").value) || 0,
+  };
+
+  try {
+    const result = await runEvaluation(config);
+    showResults(result, config);
+  } catch (err) {
+    if (err.name !== "AbortError") {
+      addFeedItem("system", 0, "error", `Error: ${err.message}`, 0);
+    }
+  } finally {
+    running = false;
+    btn.classList.remove("loading");
+    btn.disabled = false;
+    progress.classList.remove("active");
+    clearInterval(timerInterval);
+  }
+}
+
+function cancelRun() {
+  if (abortController) abortController.abort();
+}
+
+function showFieldError(id, inputId) {
+  document.getElementById(id).classList.add("visible");
+  document.getElementById(inputId).classList.add("error");
+}
+
+function hideFieldError(id, inputId) {
+  document.getElementById(id).classList.remove("visible");
+  document.getElementById(inputId).classList.remove("error");
+}
+
+function updateTimer() {
+  const elapsed = ((Date.now() - startTime) / 1000).toFixed(0);
+  document.getElementById("progress-time").textContent = `Elapsed: ${elapsed}s`;
+}
+
+// ─── Run evaluation via backend ───
+async function runEvaluation(config) {
+  const mode = MODES[config.mode];
+  const categories = mode.categories === "all" ? ALL_CATEGORIES : mode.categories;
+  const totalQuestions = categories.length * Object.values(mode.dist).reduce((a, b) => a + b, 0);
+
+  let completed = 0;
+  const results = [];
+
+  document.getElementById("progress-label").textContent = `0 / ${totalQuestions} questions`;
+
+  // Try SSE first, fall back to polling
+  try {
+    const response = await fetch("http://localhost:7860/api/run", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(config),
+      signal: abortController.signal,
+    });
+
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({ detail: response.statusText }));
+      throw new Error(err.detail || err.error || "API error");
+    }
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = "";
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split("\n");
+      buffer = lines.pop();
+
+      for (const line of lines) {
+        if (!line.startsWith("data: ")) continue;
+        const data = JSON.parse(line.slice(6));
+
+        if (data.type === "progress") {
+          completed++;
+          const pct = (completed / totalQuestions * 100).toFixed(0);
+          document.getElementById("progress-fill").style.width = pct + "%";
+          document.getElementById("progress-label").textContent = `${completed} / ${totalQuestions} questions`;
+          document.getElementById("progress-detail").textContent = `${data.category} · difficulty ${data.difficulty}`;
+
+          addFeedItem(
+            data.category,
+            data.difficulty,
+            data.correct ? "correct" : "wrong",
+            data.correct ? "✓" : "✗",
+            data.elapsed
+          );
+        }
+
+        if (data.type === "result") {
+          return data;
+        }
+      }
+    }
+  } catch (fetchErr) {
+    // If backend not available, show error
+    if (fetchErr.message.includes("Failed to fetch") || fetchErr.message.includes("NetworkError")) {
+      throw new Error("Cannot connect to FORGE backend. Make sure it's running: python -m forge.ui");
+    }
+    throw fetchErr;
+  }
+}
+
+// ─── Feed ───
+function addFeedItem(cat, diff, type, status, time) {
+  const feed = document.getElementById("feed");
+  const item = document.createElement("div");
+  item.className = `feed-item ${type}`;
+  item.innerHTML = `
+    <span class="feed-cat">${CATEGORY_DISPLAY[cat] || cat}</span>
+    <span class="feed-diff">d${diff}</span>
+    <span class="feed-status ${type === "correct" ? "ok" : type === "wrong" ? "fail" : "err"}">${status}</span>
+    <span class="feed-time">${time ? time.toFixed(1) + "s" : ""}</span>
+  `;
+  feed.appendChild(item);
+  feed.scrollTop = feed.scrollHeight;
+}
+
+// ─── Results ───
+function showResults(data, config) {
+  document.getElementById("feed").classList.remove("active");
+  const results = document.getElementById("results");
+  results.classList.add("active");
+
+  // Metrics
+  const metrics = document.getElementById("metrics");
+  const cliffLabel = data.cliff_index ? `Tier ${data.cliff_index}` : "No cliff";
+  metrics.innerHTML = `
+    <div class="metric-card">
+      <span class="metric-label">Global FORGE Score</span>
+      <span class="metric-value" data-count="${data.forge_score}">0</span>
+    </div>
+    <div class="metric-card">
+      <span class="metric-label">Extrapolation Score</span>
+      <span class="metric-value" data-count="${data.extrapolation_score}">0</span>
+    </div>
+    <div class="metric-card">
+      <span class="metric-label">Cliff Index</span>
+      <span class="metric-value amber">${cliffLabel}</span>
+    </div>
+    <div class="metric-card">
+      <span class="metric-label">Estimated Cost</span>
+      <span class="metric-value" data-count="${data.cost || 0}" data-prefix="$" data-decimals="2">$0</span>
+      <span class="metric-sub">${data.total_questions || 0} questions</span>
+    </div>
+  `;
+
+  // Count-up animation
+  document.querySelectorAll("[data-count]").forEach(el => {
+    const target = parseFloat(el.dataset.count);
+    const prefix = el.dataset.prefix || "";
+    const decimals = parseInt(el.dataset.decimals || "4");
+    animateCount(el, target, prefix, decimals);
+  });
+
+  // Category table
+  const tbody = document.getElementById("cat-tbody");
+  tbody.innerHTML = "";
+  const cats = data.categories || [];
+  const sorted = [...cats].sort((a, b) => b.score - a.score);
+
+  sorted.forEach(cat => {
+    const tr = document.createElement("tr");
+    const tiers = [1, 2, 3, 4, 5].map(d => {
+      const t = cat.tiers?.[d];
+      return `<div class="tier-sq ${t && t.correct > 0 ? "pass" : ""}" title="Tier ${d}: ${t ? t.correct + "/" + t.total : "N/A"}"></div>`;
+    }).join("");
+
+    tr.innerHTML = `
+      <td>${CATEGORY_DISPLAY[cat.name] || cat.name}</td>
+      <td><div class="tier-squares">${tiers}</div></td>
+      <td>${(cat.score * 100).toFixed(0)}%</td>
+      <td>${cat.correct}/${cat.total}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+
+  // Cliff chart
+  drawCliffChart(data);
+}
+
+function animateCount(el, target, prefix, decimals) {
+  const duration = 800;
+  const start = Date.now();
+  const step = () => {
+    const elapsed = Date.now() - start;
+    const progress = Math.min(elapsed / duration, 1);
+    const eased = 1 - Math.pow(1 - progress, 3);
+    const current = target * eased;
+    el.textContent = prefix + current.toFixed(decimals);
+    if (progress < 1) requestAnimationFrame(step);
+  };
+  requestAnimationFrame(step);
+}
+
+// ─── Cliff chart ───
+function drawCliffChart(data) {
+  const svg = document.getElementById("cliff-svg");
+  const cats = data.categories || [];
+
+  // Compute average accuracy per tier
+  const tierAcc = {};
+  const tierCount = {};
+  cats.forEach(cat => {
+    if (cat.tiers) {
+      Object.entries(cat.tiers).forEach(([d, t]) => {
+        if (!tierAcc[d]) { tierAcc[d] = 0; tierCount[d] = 0; }
+        tierAcc[d] += t.total > 0 ? t.correct / t.total : 0;
+        tierCount[d]++;
+      });
+    }
+  });
+
+  const points = [];
+  for (let d = 1; d <= 5; d++) {
+    if (tierCount[d]) {
+      points.push({ tier: d, accuracy: tierAcc[d] / tierCount[d] });
+    }
+  }
+
+  if (points.length < 2) {
+    svg.innerHTML = '<text x="300" y="80" text-anchor="middle" class="axis-label">Not enough data for cliff chart</text>';
+    return;
+  }
+
+  const pad = { top: 20, right: 40, bottom: 30, left: 50 };
+  const w = 600 - pad.left - pad.right;
+  const h = 160 - pad.top - pad.bottom;
+
+  const xScale = (tier) => pad.left + ((tier - 1) / 4) * w;
+  const yScale = (acc) => pad.top + (1 - acc) * h;
+
+  let html = "";
+
+  // Grid lines
+  for (let i = 0; i <= 4; i++) {
+    const y = pad.top + (i / 4) * h;
+    html += `<line x1="${pad.left}" y1="${y}" x2="${600 - pad.right}" y2="${y}" stroke="#E5E5E5" stroke-width="0.5"/>`;
+    html += `<text x="${pad.left - 8}" y="${y + 4}" text-anchor="end" class="axis-label">${((1 - i / 4) * 100).toFixed(0)}%</text>`;
+  }
+
+  // X axis labels
+  for (let d = 1; d <= 5; d++) {
+    html += `<text x="${xScale(d)}" y="${160 - 4}" text-anchor="middle" class="axis-label">Tier ${d}</text>`;
+  }
+
+  // Cliff zones
+  for (let i = 1; i < points.length; i++) {
+    const drop = points[i - 1].accuracy - points[i].accuracy;
+    if (drop > 0.3) {
+      const x1 = xScale(points[i].tier);
+      html += `<line x1="${x1}" y1="${pad.top}" x2="${x1}" y2="${pad.top + h}" class="cliff-marker"/>`;
+      html += `<rect x="${x1 - 20}" y="${yScale(points[i - 1].accuracy) - 18}" width="80" height="16" fill="var(--amber)" opacity="0.1" rx="2"/>`;
+      html += `<text x="${x1 + 2}" y="${yScale(points[i - 1].accuracy) - 7}" class="cliff-label">cliff detected</text>`;
+    }
+  }
+
+  // Line
+  const pathD = points.map((p, i) => `${i === 0 ? "M" : "L"}${xScale(p.tier)},${yScale(p.accuracy)}`).join(" ");
+  html += `<path d="${pathD}" class="cliff-line"/>`;
+
+  // Dots
+  points.forEach(p => {
+    html += `<circle cx="${xScale(p.tier)}" cy="${yScale(p.accuracy)}" r="4" class="cliff-dot"/>`;
+  });
+
+  svg.innerHTML = html;
+}
+
+// ─── Export ───
+document.querySelectorAll(".btn-export").forEach(btn => {
+  btn.addEventListener("click", () => {
+    const type = btn.dataset.export;
+    let text = "";
+
+    if (type === "json") {
+      text = JSON.stringify(window._lastResult || {}, null, 2);
+    } else if (type === "markdown") {
+      text = "| Category | Score | Correct | Total |\n|---|---|---|---|\n";
+      (window._lastResult?.categories || []).forEach(c => {
+        text += `| ${CATEGORY_DISPLAY[c.name] || c.name} | ${(c.score * 100).toFixed(0)}% | ${c.correct} | ${c.total} |\n`;
+      });
+    } else if (type === "cli") {
+      const c = window._lastConfig || {};
+      text = `python -m forge.cli run --mode ${c.mode || "quick"} --model ${c.model || "?"} --api-base ${c.api_base || "?"} --api-key YOUR_KEY --seed ${c.seed || 42}`;
+    }
+
+    navigator.clipboard.writeText(text).then(() => {
+      btn.textContent = "Copied";
+      btn.classList.add("copied");
+      setTimeout(() => {
+        btn.textContent = btn.dataset.export === "json" ? "Copy results as JSON" :
+                          btn.dataset.export === "markdown" ? "Export Markdown table" : "Copy CLI command used";
+        btn.classList.remove("copied");
+      }, 1500);
+    });
+  });
+});
+
+// Store last result for export
+const origShowResults = showResults;
+showResults = function(data, config) {
+  window._lastResult = data;
+  window._lastConfig = config;
+  origShowResults(data, config);
+};
+</script>
+
+</body>
+</html>

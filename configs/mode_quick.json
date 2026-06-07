@@ -1,0 +1,10 @@
+{
+  "mode": "quick",
+  "questions_per_category": 10,
+  "difficulty_distribution": {
+    "3": 5,
+    "4": 5
+  },
+  "timeout_seconds": 120,
+  "description": "Rapid iterative development and pipeline validation. No significance testing."
+}

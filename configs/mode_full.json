@@ -1,0 +1,13 @@
+{
+  "mode": "full",
+  "questions_per_category": 400,
+  "difficulty_distribution": {
+    "1": 80,
+    "2": 80,
+    "3": 80,
+    "4": 80,
+    "5": 80
+  },
+  "timeout_seconds": 120,
+  "description": "Published leaderboard submissions, rigorous hypothesis testing. 95% CI, ±5% margin of error."
+}

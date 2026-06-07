@@ -1,0 +1,9 @@
+{
+  "mode": "nano",
+  "questions_per_category": 1,
+  "difficulty_distribution": {
+    "3": 1
+  },
+  "timeout_seconds": 120,
+  "description": "Instant test run with ~10 questions total. One question per category at medium-hard difficulty. Use for pipeline validation and API testing."
+}

@@ -1,0 +1,818 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<!-- X/Twitter -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:site" content="@MohamedHz72007">
+<meta name="twitter:title" content="FORGE — Formally Generated Reasoning Evaluation">
+<meta name="twitter:description" content="A procedurally generated benchmark testing whether LLMs possess internal world-models or just interpolate training data. The first benchmark with a built-in longitudinal audit trail.">
+<meta name="twitter:image" content="https://raw.githubusercontent.com/mohamedhossammohamed/FORGE/main/assets/og-card.png">
+
+<!-- Open Graph -->
+<meta property="og:type" content="website">
+<meta property="og:title" content="FORGE — Formally Generated Reasoning Evaluation">
+<meta property="og:description" content="A procedurally generated benchmark testing whether LLMs possess internal world-models or just interpolate training data.">
+<meta property="og:image" content="https://raw.githubusercontent.com/mohamedhossammohamed/FORGE/main/assets/og-card.png">
+<meta property="og:url" content="https://mohamedhossammohamed.github.io/FORGE/">
+
+<title>FORGE — Formally Generated Reasoning Evaluation</title>
+
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Serif+Display&display=swap');
+
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+:root {
+  --ink: #0A1628;
+  --amber: #E8A020;
+  --bg: #FAFAFA;
+  --surface: #FFFFFF;
+  --border: #E5E5E5;
+  --text: #1A1A1A;
+  --text-secondary: #6B6B6B;
+  --text-tertiary: #999999;
+  --font-serif: 'DM Serif Display', Georgia, serif;
+  --font-mono: 'DM Mono', 'SF Mono', 'Fira Code', monospace;
+  --unit: 8px;
+  --max-w: 760px;
+}
+
+html { font-size: 16px; -webkit-font-smoothing: antialiased; scroll-behavior: smooth; }
+
+body {
+  font-family: var(--font-mono);
+  font-weight: 400;
+  color: var(--text);
+  background: var(--bg);
+  line-height: 1.7;
+}
+
+::selection { background: var(--ink); color: #fff; }
+
+a { color: var(--ink); }
+
+/* ─── Nav ─── */
+
+nav {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: rgba(250,250,250,0.92);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--border);
+  padding: calc(var(--unit) * 1.5) 0;
+}
+
+nav .inner {
+  max-width: var(--max-w);
+  margin: 0 auto;
+  padding: 0 calc(var(--unit) * 3);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.nav-logo {
+  font-family: var(--font-serif);
+  font-size: 20px;
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.nav-links {
+  display: flex;
+  gap: calc(var(--unit) * 3);
+  list-style: none;
+}
+
+.nav-links a {
+  font-size: 13px;
+  color: var(--text-secondary);
+  text-decoration: none;
+  transition: color 150ms ease;
+}
+
+.nav-links a:hover { color: var(--ink); }
+
+/* ─── Container ─── */
+
+.page {
+  max-width: var(--max-w);
+  margin: 0 auto;
+  padding: 0 calc(var(--unit) * 3);
+}
+
+/* ─── Hero ─── */
+
+.hero {
+  padding: calc(var(--unit) * 10) 0 calc(var(--unit) * 6) 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.hero-label {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: calc(var(--unit) * 2);
+}
+
+.hero h1 {
+  font-family: var(--font-serif);
+  font-size: clamp(32px, 5vw, 48px);
+  color: var(--ink);
+  line-height: 1.15;
+  margin-bottom: calc(var(--unit) * 3);
+  letter-spacing: -0.02em;
+}
+
+.hero-sub {
+  font-size: 15px;
+  color: var(--text-secondary);
+  max-width: 560px;
+  line-height: 1.7;
+  margin-bottom: calc(var(--unit) * 4);
+}
+
+.hero-actions {
+  display: flex;
+  gap: calc(var(--unit) * 2);
+  flex-wrap: wrap;
+}
+
+.btn {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 500;
+  padding: calc(var(--unit) * 1.5) calc(var(--unit) * 3);
+  text-decoration: none;
+  transition: all 150ms ease;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  gap: calc(var(--unit) * 1);
+}
+
+.btn-primary {
+  background: var(--ink);
+  color: #fff;
+  border: 1px solid var(--ink);
+}
+
+.btn-primary:hover { opacity: 0.85; }
+
+.btn-ghost {
+  background: transparent;
+  color: var(--ink);
+  border: 1px solid var(--border);
+}
+
+.btn-ghost:hover { border-color: var(--ink); }
+
+/* ─── Sections ─── */
+
+section {
+  padding: calc(var(--unit) * 6) 0;
+  border-bottom: 1px solid var(--border);
+}
+
+section:last-of-type { border-bottom: none; }
+
+.section-label {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: calc(var(--unit) * 2);
+}
+
+h2 {
+  font-family: var(--font-serif);
+  font-size: 28px;
+  color: var(--ink);
+  line-height: 1.25;
+  margin-bottom: calc(var(--unit) * 3);
+  letter-spacing: -0.01em;
+}
+
+h3 {
+  font-family: var(--font-serif);
+  font-size: 20px;
+  color: var(--ink);
+  margin-bottom: calc(var(--unit) * 1.5);
+}
+
+p {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin-bottom: calc(var(--unit) * 2);
+}
+
+p.lead {
+  font-size: 15px;
+  color: var(--text);
+  line-height: 1.8;
+}
+
+/* ─── Hypothesis block ─── */
+
+.hypothesis {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--ink);
+  padding: calc(var(--unit) * 3);
+  margin: calc(var(--unit) * 3) 0;
+}
+
+.hypothesis p {
+  color: var(--text);
+  font-size: 14px;
+  margin-bottom: 0;
+}
+
+.hypothesis strong { color: var(--ink); }
+
+/* ─── Data table ─── */
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: calc(var(--unit) * 3) 0;
+  font-size: 13px;
+}
+
+.data-table th {
+  font-weight: 500;
+  color: var(--text-secondary);
+  text-align: left;
+  padding: calc(var(--unit) * 1) calc(var(--unit) * 1.5);
+  border-bottom: 2px solid var(--border);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.data-table td {
+  padding: calc(var(--unit) * 1.5) calc(var(--unit) * 1.5);
+  border-bottom: 1px solid var(--border);
+  color: var(--text-secondary);
+  vertical-align: top;
+}
+
+.data-table td:first-child {
+  color: var(--text);
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+/* ─── Code block ─── */
+
+.code-block {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  background: var(--ink);
+  color: #C8D6E5;
+  padding: calc(var(--unit) * 2.5);
+  margin: calc(var(--unit) * 3) 0;
+  overflow-x: auto;
+  line-height: 1.7;
+}
+
+.code-block .prompt { color: var(--amber); }
+.code-block .cmd { color: #E8E8E8; }
+.code-block .comment { color: #6B7B8D; }
+
+/* ─── Category grid ─── */
+
+.cat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: calc(var(--unit) * 1);
+  margin: calc(var(--unit) * 3) 0;
+}
+
+.cat-item {
+  font-size: 13px;
+  color: var(--text-secondary);
+  padding: calc(var(--unit) * 1) calc(var(--unit) * 1.5);
+  border: 1px solid var(--border);
+  background: var(--surface);
+}
+
+.cat-item .cat-num {
+  color: var(--text-tertiary);
+  font-size: 11px;
+  margin-right: calc(var(--unit) * 1);
+}
+
+/* ─── Metrics row ─── */
+
+.metric-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: calc(var(--unit) * 2);
+  margin: calc(var(--unit) * 3) 0;
+}
+
+.metric-card {
+  border: 1px solid var(--border);
+  padding: calc(var(--unit) * 2.5);
+  text-align: center;
+}
+
+.metric-card .value {
+  font-family: var(--font-mono);
+  font-size: 24px;
+  font-weight: 500;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+  line-height: 1.2;
+}
+
+.metric-card .value.amber { color: var(--amber); }
+
+.metric-card .label {
+  font-size: 11px;
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-top: calc(var(--unit) * 0.5);
+}
+
+/* ─── Scoring formula ─── */
+
+.formula-block {
+  font-family: var(--font-mono);
+  font-size: 14px;
+  color: var(--ink);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  padding: calc(var(--unit) * 2.5);
+  margin: calc(var(--unit) * 2) 0;
+  text-align: center;
+  overflow-x: auto;
+}
+
+/* ─── Audit trail ─── */
+
+.audit-steps {
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--unit) * 2);
+  margin: calc(var(--unit) * 3) 0;
+}
+
+.audit-step {
+  display: flex;
+  gap: calc(var(--unit) * 2);
+  align-items: flex-start;
+}
+
+.audit-num {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--amber);
+  min-width: 24px;
+  height: 24px;
+  border: 1px solid var(--amber);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.audit-text {
+  font-size: 14px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+/* ─── Quote ─── */
+
+.quote {
+  border-left: 2px solid var(--border);
+  padding-left: calc(var(--unit) * 2.5);
+  margin: calc(var(--unit) * 3) 0;
+}
+
+.quote p {
+  font-family: var(--font-serif);
+  font-size: 18px;
+  color: var(--ink);
+  line-height: 1.5;
+  font-style: italic;
+  margin-bottom: 0;
+}
+
+/* ─── Footer ─── */
+
+footer {
+  padding: calc(var(--unit) * 5) 0;
+  border-top: 1px solid var(--border);
+  margin-top: calc(var(--unit) * 2);
+}
+
+footer p {
+  font-size: 12px;
+  color: var(--text-tertiary);
+}
+
+footer a {
+  color: var(--text-secondary);
+  text-decoration: none;
+}
+
+footer a:hover { color: var(--ink); }
+
+.footer-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: calc(var(--unit) * 2);
+}
+
+/* ─── Reveal animation ─── */
+
+.reveal {
+  opacity: 0;
+  transform: translateY(16px);
+}
+
+.reveal.visible {
+  animation: fadeUp 500ms ease-out forwards;
+}
+
+@keyframes fadeUp {
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ─── Responsive ─── */
+
+@media (max-width: 640px) {
+  .hero h1 { font-size: 28px; }
+  .metric-row { grid-template-columns: 1fr; }
+  .cat-grid { grid-template-columns: 1fr; }
+  .nav-links { gap: calc(var(--unit) * 2); }
+  .footer-row { flex-direction: column; align-items: flex-start; }
+}
+</style>
+</head>
+<body>
+
+<!-- ─── Nav ─── -->
+<nav>
+  <div class="inner">
+    <a href="/" class="nav-logo">FORGE</a>
+    <ul class="nav-links">
+      <li><a href="#hypothesis">Hypothesis</a></li>
+      <li><a href="#how-it-works">How it works</a></li>
+      <li><a href="#scoring">Scoring</a></li>
+      <li><a href="#nerfed-model">Audit trail</a></li>
+      <li><a href="#get-started">Get started</a></li>
+      <li><a href="researcher.html">Run</a></li>
+    </ul>
+  </div>
+</nav>
+
+<!-- ─── Hero ─── -->
+<header class="hero page reveal">
+  <div class="hero-label">Open-source benchmark · MIT License</div>
+  <h1>Measuring understanding,<br>not memorization.</h1>
+  <p class="hero-sub">
+    FORGE is a procedurally generated evaluation instrument that tests whether large
+    language models generalize through internal world-models or succeed via sophisticated
+    interpolation over memorized training data.
+  </p>
+  <div class="hero-actions">
+    <a href="researcher.html" class="btn btn-primary">Run FORGE</a>
+    <a href="https://github.com/mohamedhossammohamed/FORGE" class="btn btn-ghost" target="_blank">
+      <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+      View on GitHub
+    </a>
+  </div>
+</header>
+
+<!-- ─── Hypothesis ─── -->
+<section id="hypothesis" class="page reveal">
+  <div class="section-label">01 — The Hypothesis</div>
+  <h2>Do LLMs build internal world-models?</h2>
+
+  <p class="lead">
+    Large language models may be operating with something functionally equivalent to an
+    internal model of reality: a compressed, weighted representation of mathematical
+    structure, physical law, and logical relationship embedded in their weights.
+  </p>
+
+  <div class="hypothesis">
+    <p>
+      <strong>Core claim:</strong> A model's score on FORGE is evidence—not proof—of how
+      deeply it has internalized mathematical and physical structure, as distinct from how
+      much relevant training data it has seen.
+    </p>
+  </div>
+
+  <p>
+    This remains a contested scientific claim. Mechanistic interpretability research suggests
+    models develop hierarchically structured understanding during training. But opposing
+    evidence shows that reasoning models suffer catastrophic accuracy collapse—rather than
+    graceful degradation—when pushed slightly beyond their training distribution.
+  </p>
+
+  <p>
+    FORGE does not assert an answer. It produces clean, contamination-free evidence that
+    bears directly on this question.
+  </p>
+
+  <div class="hypothesis">
+    <p>
+      <strong>Falsifiability:</strong> The hypothesis would be disproven if models scoring
+      highly on maximum difficulty tiers suffer catastrophic degradation when mathematical
+      structure remains identical but semantic framing is inverted—proving reliance on
+      surface-level pattern matching rather than internalized circuits.
+    </p>
+  </div>
+</section>
+
+<!-- ─── How it works ─── -->
+<section id="how-it-works" class="page reveal">
+  <div class="section-label">02 — How it works</div>
+  <h2>25 categories. Every question generated at runtime.</h2>
+
+  <p>
+    FORGE generates every problem procedurally from a seed using SHA-256 derived RNGs.
+    No static question bank. No test-set leakage. Same seed produces identical problems
+    every time, on any machine.
+  </p>
+
+  <div class="metric-row">
+    <div class="metric-card">
+      <div class="value">25</div>
+      <div class="label">Categories</div>
+    </div>
+    <div class="metric-card">
+      <div class="value">5</div>
+      <div class="label">Difficulty tiers</div>
+    </div>
+    <div class="metric-card">
+      <div class="value amber">0</div>
+      <div class="label">LLM judges</div>
+    </div>
+  </div>
+
+  <h3>Category registry</h3>
+
+  <div class="cat-grid">
+    <div class="cat-item"><span class="cat-num">01</span>Arithmetic Chain</div>
+    <div class="cat-item"><span class="cat-num">02</span>Polynomial Roots</div>
+    <div class="cat-item"><span class="cat-num">03</span>Matrix Determinants</div>
+    <div class="cat-item"><span class="cat-num">04</span>Jordan Normal Form</div>
+    <div class="cat-item"><span class="cat-num">05</span>RLC Circuits</div>
+    <div class="cat-item"><span class="cat-num">06</span>Boolean Minimization</div>
+    <div class="cat-item"><span class="cat-num">07</span>Chess Mate-in-N</div>
+    <div class="cat-item"><span class="cat-num">08</span>Shortest Path</div>
+    <div class="cat-item"><span class="cat-num">09</span>RSA Arithmetic</div>
+    <div class="cat-item"><span class="cat-num">10</span>Stars and Bars</div>
+    <div class="cat-item"><span class="cat-num">11</span>Shannon Entropy</div>
+    <div class="cat-item"><span class="cat-num">12</span>DFT</div>
+    <div class="cat-item"><span class="cat-num">13</span>Nim States</div>
+    <div class="cat-item"><span class="cat-num">14</span>Group Orders</div>
+    <div class="cat-item"><span class="cat-num">15</span>Linear Systems</div>
+    <div class="cat-item"><span class="cat-num">16</span>Modular Exponentiation</div>
+    <div class="cat-item"><span class="cat-num">17</span>Vector Divergence</div>
+    <div class="cat-item"><span class="cat-num">18</span>Polygon Area</div>
+    <div class="cat-item"><span class="cat-num">19</span>Financial Math</div>
+    <div class="cat-item"><span class="cat-num">20</span>Bayesian Updating</div>
+    <div class="cat-item"><span class="cat-num">21</span>Taylor Series</div>
+    <div class="cat-item"><span class="cat-num">22</span>Diophantine Equations</div>
+    <div class="cat-item"><span class="cat-num">23</span>Formal Grammars</div>
+    <div class="cat-item"><span class="cat-num">24</span>Quantum States</div>
+    <div class="cat-item"><span class="cat-num">25</span>Algorithmic Trace</div>
+  </div>
+
+  <h3>Deterministic grading</h3>
+
+  <p>
+    All evaluation is performed through exact computational verification. Zero LLM judges.
+    Zero subjective bias.
+  </p>
+
+  <table class="data-table">
+    <thead>
+      <tr><th>Engine</th><th>Used for</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>SymPy</td><td>Symbolic equivalence, differential equations, logic reduction</td></tr>
+      <tr><td>NumPy</td><td>Matrix operations, DFT, numerical precision</td></tr>
+      <tr><td>python-chess</td><td>Game state validation, legal move verification</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ─── Scoring ─── -->
+<section id="scoring" class="page reveal">
+  <div class="section-label">03 — Scoring</div>
+  <h2>The Complexity Cliff Index</h2>
+
+  <p>
+    A simple mean accuracy conflates easy interpolation with true world-modeling.
+    FORGE uses a weighted geometric mean that exponentially rewards performance at
+    higher complexity tiers, penalizing models that only succeed at memorizable depths.
+  </p>
+
+  <div class="formula-block">
+    C_c = Σ(α<sup>d</sup> · S<sub>c,d</sub>) / Σ(α<sup>d</sup>)&emsp;&emsp;α = 1.5
+  </div>
+
+  <p>
+    The <strong>Cliff Index</strong> reports the exact difficulty tier where accuracy drops
+    more than 30% from the previous tier. This is the single most diagnostic number
+    FORGE produces.
+  </p>
+
+  <table class="data-table">
+    <thead>
+      <tr><th>Metric</th><th>What it measures</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>FORGE Score</td><td>Weighted accuracy across all categories and tiers</td></tr>
+      <tr><td>Interpolation Score</td><td>Performance on Easy/Medium (likely in training data)</td></tr>
+      <tr><td>Extrapolation Score</td><td>Performance on Hard/Expert (statistically novel)</td></tr>
+      <tr><td>Cliff Index</td><td>First tier where accuracy drops &gt;30%</td></tr>
+    </tbody>
+  </table>
+
+  <div class="hypothesis">
+    <p>
+      <strong>Key insight:</strong> A model with high Interpolation but low Extrapolation
+      is likely memorizing. A model maintaining high scores across both zones has evidence
+      of generalized reasoning circuits.
+    </p>
+  </div>
+</section>
+
+<!-- ─── Nerfed Model Problem ─── -->
+<section id="nerfed-model" class="page reveal">
+  <div class="section-label">04 — The Nerfed Model Problem</div>
+  <h2>The first benchmark with a built-in audit trail.</h2>
+
+  <p class="lead">
+    AI labs face a quiet incentive problem. A model is released. It scores well on public
+    benchmarks. The scores become marketing. Then, quietly, the model is updated. The
+    published scores no longer reflect what users are actually running.
+  </p>
+
+  <p>
+    There is currently no clean way to detect this. Fixed benchmarks cannot distinguish
+    between "the model got smarter" and "the model was tuned toward this specific benchmark
+    distribution."
+  </p>
+
+  <p><strong>FORGE changes this.</strong></p>
+
+  <div class="audit-steps">
+    <div class="audit-step">
+      <span class="audit-num">1</span>
+      <span class="audit-text">Lab publishes: Model X, Seed 42, FORGE Score 0.847</span>
+    </div>
+    <div class="audit-step">
+      <span class="audit-num">2</span>
+      <span class="audit-text">Timestamp recorded: 2025-01-15</span>
+    </div>
+    <div class="audit-step">
+      <span class="audit-num">3</span>
+      <span class="audit-text">Six months later, anyone can run the same seed against the same endpoint</span>
+    </div>
+    <div class="audit-step">
+      <span class="audit-num">4</span>
+      <span class="audit-text">If the score has shifted, the shift is real and documented</span>
+    </div>
+  </div>
+
+  <div class="quote">
+    <p>FORGE does not accuse anyone of nerfing. It simply makes the question answerable for the first time.</p>
+  </div>
+
+  <h3>Seed security</h3>
+
+  <p>
+    FORGE uses a 256-bit hash space (SHA-256). There are more possible problem sets than
+    atoms in the observable universe. Pre-computation is physically impossible.
+  </p>
+
+  <table class="data-table">
+    <thead>
+      <tr><th>Metric</th><th>Value</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Hash space</td><td>2<sup>256</sup> ≈ 1.2 × 10<sup>77</sup></td></tr>
+      <tr><td>Time to exhaust (1T hashes/sec)</td><td>~3.7 × 10<sup>51</sup> years</td></tr>
+      <tr><td>Age of universe</td><td>1.4 × 10<sup>10</sup> years</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ─── Static benchmarks ─── -->
+<section class="page reveal">
+  <div class="section-label">05 — Why existing benchmarks fail</div>
+  <h2>The contamination-saturation cycle</h2>
+
+  <table class="data-table">
+    <thead>
+      <tr><th>Benchmark</th><th>Failure mode</th><th>FORGE resolution</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>MMLU</td><td>Static saturation, formatting gaming</td><td>Zero multiple-choice. Every answer derived from scratch.</td></tr>
+      <tr><td>MATH / GSM8K</td><td>Data contamination, memorization</td><td>100% procedural. Near-zero collision probability.</td></tr>
+      <tr><td>FrontierMath</td><td>Unscalable human bottleneck</td><td>Parametric difficulty via mathematical parameters.</td></tr>
+      <tr><td>AIME / Olympiad</td><td>LLM-as-judge bias, hallucinated grading</td><td>Deterministic SymPy/NumPy grading. Zero LLM judges.</td></tr>
+      <tr><td>HumanEval</td><td>Memorized boilerplate algorithms</td><td>Traces non-standard procedural algorithms.</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ─── Get started ─── -->
+<section id="get-started" class="page reveal">
+  <div class="section-label">06 — Get started</div>
+  <h2>Run FORGE in under a minute.</h2>
+
+  <h3>Install</h3>
+
+  <div class="code-block">
+    <span class="comment"># Clone and install</span><br>
+    <span class="prompt">$</span> <span class="cmd">git clone https://github.com/mohamedhossammohamed/FORGE.git</span><br>
+    <span class="prompt">$</span> <span class="cmd">cd FORGE && pip install -r requirements.txt</span>
+  </div>
+
+  <h3>Run via CLI</h3>
+
+  <div class="code-block">
+    <span class="comment"># Quick evaluation (~5 min, 250 questions)</span><br>
+    <span class="prompt">$</span> <span class="cmd">python -m forge.cli run \</span><br>
+    <span class="cmd">&nbsp;&nbsp;--mode quick \</span><br>
+    <span class="cmd">&nbsp;&nbsp;--model qwen/qwen3-235b-a22b-thinking-2507 \</span><br>
+    <span class="cmd">&nbsp;&nbsp;--api-base https://openrouter.ai/api/v1 \</span><br>
+    <span class="cmd">&nbsp;&nbsp;--api-key sk-... \</span><br>
+    <span class="cmd">&nbsp;&nbsp;--seed 42</span>
+  </div>
+
+  <h3>Run via web UI</h3>
+
+  <div class="code-block">
+    <span class="comment"># Launch the researcher tool</span><br>
+    <span class="prompt">$</span> <span class="cmd">python -m forge.server</span><br>
+    <span class="comment"># Opens at http://localhost:7860/researcher.html</span>
+  </div>
+
+  <h3>Run modes</h3>
+
+  <table class="data-table">
+    <thead>
+      <tr><th>Mode</th><th>Questions</th><th>Time</th><th>Cost</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>nano</td><td>5</td><td>~30s</td><td>&lt;$0.01</td></tr>
+      <tr><td>quick</td><td>250</td><td>~5 min</td><td>~$0.10</td></tr>
+      <tr><td>standard</td><td>2,500</td><td>~1 hr</td><td>~$1.00</td></tr>
+      <tr><td>full</td><td>10,000</td><td>~4 hr</td><td>~$4.00</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ─── Footer ─── -->
+<footer class="page">
+  <div class="footer-row">
+    <p>
+      Built by <a href="https://github.com/mohamedhossammohamed">Mohamed Hossam</a>
+      · <a href="https://x.com/MohamedHz72007">@MohamedHz72007</a>
+    </p>
+    <p>
+      <a href="https://github.com/mohamedhossammohamed/FORGE">GitHub</a>
+      · <a href="researcher.html">Run FORGE</a>
+      · MIT License
+    </p>
+  </div>
+</footer>
+
+<script>
+// Reveal on scroll
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      entry.target.classList.add("visible");
+      observer.unobserve(entry.target);
+    }
+  });
+}, { threshold: 0.1 });
+
+document.querySelectorAll(".reveal").forEach(el => observer.observe(el));
+</script>
+
+</body>
+</html>
