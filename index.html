@@ -794,6 +794,20 @@ footer a:hover { color: var(--ink); }
     grader flagged all 10 entropy questions as incorrect. Raw response (first failure,
     truncated): "log2(50/321) = log2(50) - log2(321) = 5.6439 - 8.3219 = -2.6780" (actual: -2.6826).
   </p>
+
+  <h3>Shannon Entropy — cross-model non-monotonic failure</h3>
+
+  <p>
+    On seed 17017656696087371159 (nano mode, 5 questions, Shannon Entropy difficulty 3), 8 frontier
+    models were evaluated. Five passed (DeepSeek V4 Pro, GPT-5.5, Claude Opus 4.7, Nemotron 550B,
+    MiniMax M3). Three failed on the same entropy question (expected 2.7037): Claude Opus 4.8
+    extracted 2.7038, Claude Opus 4.6 extracted 2.7036 — both within 4th-decimal rounding error
+    of the correct value. Claude Sonnet 4.6 extracted 2.7056, a larger deviation traced to an
+    incorrect intermediate logarithm: ln(0.072650) computed as −2.6439 versus correct −2.6226.
+    Notably, Opus 4.7 passes while 4.6 and 4.8 fail — a non-monotonic pattern across versions.
+    Sonnet 4.6 is the only model with a demonstrably wrong logarithm value; the other two failures
+    are borderline tolerance cases.
+  </p>
 </section>
 
 <!-- ─── Get started ─── -->

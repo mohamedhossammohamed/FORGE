@@ -174,6 +174,10 @@ Quick mode results on cheap models are not meaningful tests of the hypothesis. T
 
 During evaluation on seed 42, qwen/qwen3-coder-flash produced confident multi-step entropy calculations using incorrect log2 values. Example: log2(107) computed as 6.7175 versus correct 6.7415 (error −0.024). The model used log2(a/b) = log2(a) − log2(b) with systematically wrong log2 values for integers 103, 107, 221, 309, 321, 332, 347. The reasoning trace showed no uncertainty at the point of error. FORGE's deterministic grader flagged all 10 entropy questions as incorrect. Raw response (first failure, truncated): "log2(50/321) = log2(50) - log2(321) = 5.6439 - 8.3219 = -2.6780" (actual: -2.6826).
 
+**Shannon Entropy — cross-model non-monotonic failure**
+
+On seed 17017656696087371159 (nano mode, 5 questions, Shannon Entropy difficulty 3), 8 frontier models were evaluated. Five passed (DeepSeek V4 Pro, GPT-5.5, Claude Opus 4.7, Nemotron 550B, MiniMax M3). Three failed on the same entropy question (expected 2.7037): Claude Opus 4.8 extracted 2.7038, Claude Opus 4.6 extracted 2.7036 — both within 4th-decimal rounding error of the correct value. Claude Sonnet 4.6 extracted 2.7056, a larger deviation traced to an incorrect intermediate logarithm: ln(0.072650) computed as −2.6439 versus correct −2.6226. Notably, Opus 4.7 passes while 4.6 and 4.8 fail — a non-monotonic pattern across versions. Sonnet 4.6 is the only model with a demonstrably wrong logarithm value; the other two failures are borderline tolerance cases.
+
 ---
 
 ## Known Issues
