@@ -690,6 +690,14 @@ nav .inner {
           <input type="number" class="field-input" id="cost-out" placeholder="Output" value="0" step="0.01">
         </div>
       </div>
+      <div class="field">
+        <label class="field-label">Concurrency</label>
+        <div style="display:flex;gap:8px;align-items:center">
+          <input type="range" id="concurrency" min="1" max="50" value="10" style="flex:1">
+          <span id="concurrency-val" style="font-size:13px;font-weight:500;min-width:28px;text-align:right">10</span>
+        </div>
+        <span class="field-hint">Parallel API requests. Higher = faster but may hit rate limits.</span>
+      </div>
     </div>
 
     <button class="btn-run" id="btn-run">Run FORGE</button>
@@ -862,6 +870,7 @@ function saveFormState() {
     mode: currentMode,
     costIn: document.getElementById("cost-in").value,
     costOut: document.getElementById("cost-out").value,
+    concurrency: document.getElementById("concurrency").value,
   };
   localStorage.setItem("forge_form", JSON.stringify(state));
 }
@@ -875,6 +884,10 @@ function restoreFormState() {
     if (state.seed) document.getElementById("seed").value = state.seed;
     if (state.costIn) document.getElementById("cost-in").value = state.costIn;
     if (state.costOut) document.getElementById("cost-out").value = state.costOut;
+    if (state.concurrency) {
+      document.getElementById("concurrency").value = state.concurrency;
+      document.getElementById("concurrency-val").textContent = state.concurrency;
+    }
     if (state.mode) {
       currentMode = state.mode;
       document.querySelectorAll(".mode-pill").forEach(b => {
@@ -889,6 +902,11 @@ function restoreFormState() {
 function setupAutoSave() {
   ["model-name", "api-base", "api-key", "seed", "cost-in", "cost-out"].forEach(id => {
     document.getElementById(id).addEventListener("input", saveFormState);
+  });
+  // Concurrency slider
+  document.getElementById("concurrency").addEventListener("input", () => {
+    document.getElementById("concurrency-val").textContent = document.getElementById("concurrency").value;
+    saveFormState();
   });
   document.querySelectorAll(".mode-pill").forEach(btn => {
     btn.addEventListener("click", () => {
@@ -1273,6 +1291,7 @@ function getConfig() {
     mode: currentMode,
     input_cost: parseFloat(document.getElementById("cost-in").value) || 0,
     output_cost: parseFloat(document.getElementById("cost-out").value) || 0,
+    concurrency: parseInt(document.getElementById("concurrency").value) || 10,
   };
 }
 

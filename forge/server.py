@@ -42,6 +42,7 @@ class RunRequest(BaseModel):
     mode: str = "nano"
     input_cost: float = 0.0
     output_cost: float = 0.0
+    concurrency: int = 10
     categories: Optional[str] = None
 
 
@@ -99,15 +100,13 @@ async def run_evaluation(req: RunRequest):
 
     async def event_stream():
         try:
-            async with ForgeRunner(model_config, concurrency=10) as runner:
+            async with ForgeRunner(model_config, concurrency=req.concurrency) as runner:
                 success, msg = await runner.test_connection()
                 if not success:
                     yield f"data: {json.dumps({'type': 'error', 'message': msg})}\n\n"
                     return
 
                 category_list = [c for c in run_config.categories if c in CATEGORIES]
-
-                yield f"data: {json.dumps({'type': 'start', 'total': total_questions})}\n\n"
 
                 start_time = time.time()
                 completed = 0
