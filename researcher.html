@@ -937,6 +937,14 @@ async function runSingle() {
     const result = await executeRun(config);
     currentResult = { ...result, config, timestamp: new Date().toISOString() };
     showResults(currentResult);
+
+    // Auto-save to localStorage
+    const snapshots = getSnapshots();
+    snapshots.push(currentResult);
+    localStorage.setItem("forge_snapshots", JSON.stringify(snapshots));
+    loadSnapshots();
+    document.getElementById("btn-save-snapshot").textContent = "Auto-saved ✓";
+    setTimeout(() => document.getElementById("btn-save-snapshot").textContent = "Save snapshot", 3000);
   } catch (err) {
     if (err.name !== "AbortError") {
       addFeedItem("error", 0, false, err.message, 0);

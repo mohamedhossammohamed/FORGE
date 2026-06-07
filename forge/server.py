@@ -16,6 +16,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import Optional
 
+import uvicorn
+uvicorn.config.WORKER_TIMEOUT = 0  # No worker timeout
+
 from .core.runner import ForgeRunner, ModelConfig, RunConfig
 from .categories import CATEGORIES, CATEGORY_NAMES
 
@@ -227,8 +230,7 @@ async def test_connection(req: RunRequest):
 
 
 def main():
-    import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=7860, log_level="info")
+    uvicorn.run(app, host="0.0.0.0", port=7860, log_level="info", timeout_keep_alive=0)
 
 
 if __name__ == "__main__":

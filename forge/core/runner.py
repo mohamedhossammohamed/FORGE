@@ -25,8 +25,8 @@ class ModelConfig:
     api_key: str
     input_cost_per_1m: float = 4.0
     output_cost_per_1m: float = 15.0
-    timeout: int = 180  # Increased for thinking models
-    max_tokens: int = 16384  # Increased for thinking models that use reasoning tokens
+    timeout: int = 600  # 10 min per request — no hard cutoffs
+    max_tokens: int = 32768
     temperature: float = 0.0
 
 
@@ -106,7 +106,12 @@ class ForgeRunner:
                 "Authorization": f"Bearer {self.model_config.api_key}",
                 "Content-Type": "application/json",
             },
-            timeout=httpx.Timeout(self.model_config.timeout),
+            timeout=httpx.Timeout(
+                connect=30.0,
+                read=float(self.model_config.timeout),
+                write=30.0,
+                pool=30.0,
+            ),
         )
         return self
     
