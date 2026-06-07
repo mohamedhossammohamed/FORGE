@@ -107,11 +107,6 @@ async def run_evaluation(req: RunRequest):
 
                 category_list = [c for c in run_config.categories if c in CATEGORIES]
 
-                # Count total questions
-                total_questions = 0
-                for cat_name in category_list:
-                    total_questions += sum(run_config.difficulty_distribution.values())
-
                 yield f"data: {json.dumps({'type': 'start', 'total': total_questions})}\n\n"
 
                 start_time = time.time()
@@ -122,41 +117,65 @@ async def run_evaluation(req: RunRequest):
                 for cat_name in category_list:
                     cat_results[cat_name] = {"correct": 0, "total": 0, "by_diff": {}}
 
+                # Build all problems upfront
+                all_problems = []
                 for cat_name in category_list:
                     cat_cls = CATEGORIES[cat_name]
                     category = cat_cls(req.seed)
-
                     for diff, count in run_config.difficulty_distribution.items():
-                        if diff not in cat_results[cat_name]["by_diff"]:
-                            cat_results[cat_name]["by_diff"][diff] = {"correct": 0, "total": 0}
-
                         for iteration in range(count):
                             problem = category.generate(diff, iteration)
-                            result = await runner.run_single(problem, category)
-                            completed += 1
+                            all_problems.append((cat_name, diff, iteration, problem, category))
 
-                            # Accumulate results
-                            cat_results[cat_name]["total"] += 1
-                            cat_results[cat_name]["by_diff"][diff]["total"] += 1
-                            if result["correct"]:
-                                cat_results[cat_name]["correct"] += 1
-                                cat_results[cat_name]["by_diff"][diff]["correct"] += 1
+                yield f"data: {json.dumps({'type': 'start', 'total': len(all_problems)})}\n\n"
 
-                            progress_data = {
-                                "type": "progress",
-                                "category": cat_name,
-                                "difficulty": diff,
-                                "correct": result["correct"],
-                                "elapsed": result["elapsed"],
-                                "completed": completed,
-                                "total": total_questions,
-                                "is_error": result.get("is_error", False),
-                                "error_message": result.get("error_message"),
-                                "expected": str(result.get("expected", "")),
-                                "extracted": str(result.get("extracted", "")),
-                                "response_preview": str(result.get("response", ""))[:500],
-                            }
-                            yield f"data: {json.dumps(progress_data)}\n\n"
+                start_time = time.time()
+                completed = 0
+
+                # Results accumulator per category
+                cat_results = {}
+                for cat_name in category_list:
+                    cat_results[cat_name] = {"correct": 0, "total": 0, "by_diff": {}}
+                    for diff in run_config.difficulty_distribution:
+                        cat_results[cat_name]["by_diff"][diff] = {"correct": 0, "total": 0}
+
+                # Run with concurrency, stream results as they complete
+                semaphore = asyncio.Semaphore(runner.concurrency)
+
+                async def run_one(cat_name, diff, iteration, problem, category):
+                    async with semaphore:
+                        return cat_name, diff, iteration, await runner.run_single(problem, category)
+
+                tasks = [
+                    asyncio.create_task(run_one(cn, d, it, p, c))
+                    for cn, d, it, p, c in all_problems
+                ]
+
+                for coro in asyncio.as_completed(tasks):
+                    cat_name, diff, iteration, result = await coro
+                    completed += 1
+
+                    cat_results[cat_name]["total"] += 1
+                    cat_results[cat_name]["by_diff"][diff]["total"] += 1
+                    if result["correct"]:
+                        cat_results[cat_name]["correct"] += 1
+                        cat_results[cat_name]["by_diff"][diff]["correct"] += 1
+
+                    progress_data = {
+                        "type": "progress",
+                        "category": cat_name,
+                        "difficulty": diff,
+                        "correct": result["correct"],
+                        "elapsed": result["elapsed"],
+                        "completed": completed,
+                        "total": len(all_problems),
+                        "is_error": result.get("is_error", False),
+                        "error_message": result.get("error_message"),
+                        "expected": str(result.get("expected", "")),
+                        "extracted": str(result.get("extracted", "")),
+                        "response_preview": str(result.get("response", ""))[:500],
+                    }
+                    yield f"data: {json.dumps(progress_data)}\n\n"
 
                 elapsed = time.time() - start_time
 
