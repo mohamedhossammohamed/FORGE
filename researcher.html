@@ -499,6 +499,40 @@ nav .inner {
   font-variant-numeric: tabular-nums;
 }
 
+/* ─── Scatter plot ─── */
+
+.scatter-svg {
+  width: 100%;
+  max-width: 400px;
+  display: block;
+  margin: 0 auto;
+}
+.scatter-svg .axis-label { font-size: 10px; fill: var(--text-tertiary); }
+
+/* ─── Heatmap ─── */
+
+.heatmap-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.heatmap-table th, .heatmap-table td { padding: 6px 8px; border: 1px solid var(--border); text-align: center; }
+.heatmap-table th { background: var(--surface); font-weight: 500; position: sticky; top: 0; }
+.heatmap-table td:first-child { text-align: left; font-weight: 500; }
+
+/* ─── Tier comparison chart ─── */
+
+.tier-compare { display: flex; gap: 2px; align-items: flex-end; height: 28px; }
+.tier-compare-bar { width: 12px; border-radius: 2px 2px 0 0; transition: height 300ms ease; }
+.tier-compare-label { font-size: 9px; text-align: center; color: var(--text-tertiary); min-width: 12px; }
+
+/* ─── Seed leaderboard ─── */
+
+.seed-card { border: 1px solid var(--border); padding: calc(var(--unit)*2); margin-bottom: calc(var(--unit)*1.5); background: var(--surface); }
+.seed-card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: calc(var(--unit)*1); }
+.seed-badge { font-size: 12px; font-family: var(--font-mono); color: var(--amber); font-weight: 500; cursor: pointer; }
+.seed-badge:hover { text-decoration: underline; }
+.seed-leaderboard { width: 100%; border-collapse: collapse; font-size: 12px; }
+.seed-leaderboard th { text-align: left; padding: 4px 8px; color: var(--text-tertiary); font-weight: 500; border-bottom: 1px solid var(--border); }
+.seed-leaderboard td { padding: 4px 8px; }
+.seed-leaderboard .rank { font-weight: 500; color: var(--ink); min-width: 28px; }
+
 /* ─── Snapshots ─── */
 
 .snapshot-list {
@@ -768,13 +802,23 @@ nav .inner {
     </div>
 
     <div id="comparison-results" style="display:none">
-      <div class="section-title">Comparison</div>
+      <div class="section-title">Score Comparison</div>
       <div id="comparison-bars"></div>
+
+      <!-- Interpolation vs Extrapolation Scatter -->
+      <div class="section-title" style="margin-top:24px">Interpolation vs Extrapolation</div>
+      <svg class="scatter-svg" id="scatter-svg" viewBox="0 0 400 400"></svg>
+
+      <!-- Per-Category Heatmap -->
+      <div class="section-title" style="margin-top:24px">Category × Model Heatmap</div>
+      <div id="comparison-heatmap" style="overflow-x:auto"></div>
+
       <table class="data-table" id="comparison-table">
         <thead>
           <tr>
             <th>Model</th>
             <th>FORGE Score</th>
+            <th>Interpolation</th>
             <th>Extrapolation</th>
             <th>Cliff Index</th>
             <th>Cost</th>
@@ -1438,8 +1482,9 @@ function showComparison() {
   container.style.display = "block";
 
   const models = Object.entries(comparisonResults).sort((a, b) => b[1].forge_score - a[1].forge_score);
+  const allCats = [...new Set(models.flatMap(([_, d]) => (d.categories || []).map(c => c.name)))];
 
-  // Bars
+  // ── Bars ──
   const bars = document.getElementById("comparison-bars");
   bars.innerHTML = models.map(([name, data], i) => {
     const color = MODEL_COLORS[i % MODEL_COLORS.length];
@@ -1454,15 +1499,74 @@ function showComparison() {
     `;
   }).join("");
 
-  // Table
+  // ── Interpolation vs Extrapolation Scatter ──
+  const svg = document.getElementById("scatter-svg");
+  const pad = { top: 30, right: 30, bottom: 40, left: 50 };
+  const w = 400 - pad.left - pad.right, h = 400 - pad.top - pad.bottom;
+  let svgHtml = "";
+
+  // Axes
+  svgHtml += `<line x1="${pad.left}" y1="${pad.top + h}" x2="${pad.left + w}" y2="${pad.top + h}" stroke="#E5E5E5" stroke-width="1"/>`;
+  svgHtml += `<text x="${pad.left + w/2}" y="${pad.top + h + 30}" text-anchor="middle" class="axis-label">Interpolation Score</text>`;
+  svgHtml += `<line x1="${pad.left}" y1="${pad.top}" x2="${pad.left}" y2="${pad.top + h}" stroke="#E5E5E5" stroke-width="1"/>`;
+  svgHtml += `<text x="15" y="${pad.top + h/2}" text-anchor="middle" class="axis-label" transform="rotate(-90,15,${pad.top + h/2})">Extrapolation</text>`;
+
+  // Diagonal (interp = extra)
+  svgHtml += `<line x1="${pad.left}" y1="${pad.top + h}" x2="${pad.left + w}" y2="${pad.top}" stroke="#E5E5E5" stroke-width="1" stroke-dasharray="4,4"/>`;
+
+  // 25%, 50%, 75% grid
+  [0.25, 0.5, 0.75].forEach(v => {
+    svgHtml += `<text x="${pad.left - 8}" y="${pad.top + h - v * h + 4}" text-anchor="end" class="axis-label">${(v*100).toFixed(0)}%</text>`;
+    svgHtml += `<text x="${pad.left + v * w}" y="${pad.top + h + 16}" text-anchor="middle" class="axis-label">${(v*100).toFixed(0)}%</text>`;
+  });
+
+  // Points
+  models.forEach(([name, data], i) => {
+    const interp = data.interpolation_score || 0;
+    const extra = data.extrapolation_score || 0;
+    const x = pad.left + interp * w;
+    const y = pad.top + h - extra * h;
+    const color = MODEL_COLORS[i % MODEL_COLORS.length];
+    svgHtml += `<circle cx="${x}" cy="${y}" r="6" fill="${color}" stroke="#fff" stroke-width="2"/>`;
+    svgHtml += `<text x="${x}" y="${y - 10}" text-anchor="middle" class="axis-label" style="font-weight:500">${name.split('/').pop().slice(0,12)}</text>`;
+  });
+
+  svg.innerHTML = svgHtml;
+
+  // ── Category Heatmap ──
+  const heatmap = document.getElementById("comparison-heatmap");
+  let heatHtml = '<table class="data-table"><thead><tr><th>Category</th>';
+  models.forEach(([name]) => { heatHtml += `<th>${name.split('/').pop().slice(0,10)}</th>`; });
+  heatHtml += '</tr></thead><tbody>';
+
+  allCats.forEach(catName => {
+    heatHtml += `<tr><td>${CAT_DISPLAY[catName] || catName}</td>`;
+    models.forEach(([_, data]) => {
+      const cat = (data.categories || []).find(c => c.name === catName);
+      const score = cat ? cat.score : null;
+      let bg = 'transparent';
+      if (score !== null) {
+        const h = score * 120;
+        bg = `hsl(${h},60%,${45 + score * 15}%)`;
+      }
+      heatHtml += `<td style="background:${bg};text-align:center;color:${score > 0.5 ? '#fff':'var(--text)'}">${score !== null ? (score * 100).toFixed(0) + '%' : '—'}</td>`;
+    });
+    heatHtml += '</tr>';
+  });
+  heatHtml += '</tbody></table>';
+  heatmap.innerHTML = heatHtml;
+
+  // ── Table ──
   const tbody = document.getElementById("comparison-tbody");
   tbody.innerHTML = models.map(([name, data]) => `
     <tr>
       <td>${name}</td>
       <td>${data.forge_score.toFixed(4)}</td>
-      <td>${data.extrapolation_score.toFixed(4)}</td>
+      <td>${(data.interpolation_score || 0).toFixed(4)}</td>
+      <td>${(data.extrapolation_score || 0).toFixed(4)}</td>
       <td>${data.cliff_index ? "Tier " + data.cliff_index : "—"}</td>
       <td>$${(data.cost || 0).toFixed(2)}</td>
+      <td>${data.elapsed ? data.elapsed.toFixed(0) + 's' : '—'}</td>
     </tr>
   `).join("");
 }
