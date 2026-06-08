@@ -7,6 +7,7 @@ timeout handling, token counting, and cost estimation.
 
 import asyncio
 import json
+import re
 import time
 from dataclasses import dataclass, field
 from typing import Any, Optional
@@ -14,6 +15,22 @@ from typing import Any, Optional
 import httpx
 
 from .generator import ForgeCategory, Problem
+
+
+def _clean_answer(raw: str) -> str:
+    """Strip LaTeX delimiters and common wrappers from an answer string."""
+    s = raw.strip()
+    s = re.sub(r"^\$\$?\s*", "", s)
+    s = re.sub(r"\s*\$\$?$", "", s)
+    s = re.sub(r"^\\\(\s*", "", s)
+    s = re.sub(r"\s*\\\)$", "", s)
+    s = re.sub(r"^\\\[\s*", "", s)
+    s = re.sub(r"\s*\\\]$", "", s)
+    s = re.sub(r"\\frac\{([^}]*)\}\{([^}]*)\}", r"\1/\2", s)
+    s = re.sub(r"\\text\{([^}]*)\}", r"\1", s)
+    s = re.sub(r"^[}\s\\]+", "", s)
+    s = re.sub(r"[}\s\\]+$", "", s)
+    return s.strip()
 
 
 @dataclass
@@ -195,7 +212,7 @@ class ForgeRunner:
                             False,
                             f"Authentication failed: {error_data.get('error', {}).get('message', 'Invalid API key')}",
                         )
-                    except:
+                    except (ValueError, KeyError):
                         pass
                 return False, "Authentication failed - invalid API key"
 
@@ -213,7 +230,7 @@ class ForgeRunner:
                         error_detail = error_data.get("error", {}).get("message", "")
                         if error_detail:
                             error_msg += f": {error_detail}"
-                    except:
+                    except (ValueError, KeyError):
                         error_msg += f": {response.text[:200]}"
                 else:
                     error_msg += f"\nContent-Type: {content_type}"
@@ -278,7 +295,7 @@ class ForgeRunner:
                         error_detail = error_data.get("error", {}).get("message", "")
                         if error_detail:
                             error_msg += f": {error_detail}"
-                    except:
+                    except (ValueError, KeyError):
                         error_msg += f": {response.text[:200]}"
                 else:
                     # Non-JSON response (HTML, etc.)
@@ -364,24 +381,6 @@ class ForgeRunner:
         if not response or response.startswith("["):
             return response
 
-        import re as _re
-
-        def _clean_answer(raw: str) -> str:
-            """Strip LaTeX delimiters and common wrappers from an answer string."""
-            s = raw.strip()
-            s = _re.sub(r"^\$\$?\s*", "", s)
-            s = _re.sub(r"\s*\$\$?$", "", s)
-            s = _re.sub(r"^\\\(\s*", "", s)
-            s = _re.sub(r"\s*\\\)$", "", s)
-            s = _re.sub(r"^\\\[\s*", "", s)
-            s = _re.sub(r"\s*\\\]$", "", s)
-            s = _re.sub(r"\\frac\{([^}]*)\}\{([^}]*)\}", r"\1/\2", s)
-            s = _re.sub(r"\\text\{([^}]*)\}", r"\1", s)
-            s = _re.sub(r"^[}\s\\]+", "", s)
-            s = _re.sub(r"[}\s\\]+$", "", s)
-            s = s.strip()
-            return s
-
         # Strict: only look for ANSWER: marker, take the LAST one
         lines = response.split("\n")
         for line in reversed(lines):
@@ -417,19 +416,7 @@ class ForgeRunner:
         if answer_line_idx is not None:
             reasoning = "\n".join(lines[:answer_line_idx]).strip()
             answer = lines[answer_line_idx].split("ANSWER:", 1)[1].strip()
-            import re as _re
-
-            answer = _re.sub(r"^\$\$?\s*", "", answer)
-            answer = _re.sub(r"\s*\$\$?$", "", answer)
-            answer = _re.sub(r"^\\\(\s*", "", answer)
-            answer = _re.sub(r"\s*\\\)$", "", answer)
-            answer = _re.sub(r"^\\\[\s*", "", answer)
-            answer = _re.sub(r"\s*\\\]$", "", answer)
-            answer = _re.sub(r"\\frac\{([^}]*)\}\{([^}]*)\}", r"\1/\2", answer)
-            answer = _re.sub(r"\\text\{([^}]*)\}", r"\1", answer)
-            answer = _re.sub(r"^[}\s\\]+", "", answer)
-            answer = _re.sub(r"[}\s\\]+$", "", answer)
-            return (reasoning, answer.strip())
+            return (reasoning, _clean_answer(answer))
 
         return (response.strip(), "")
 
@@ -686,16 +673,19 @@ class ForgeRunner:
 
     @staticmethod
     def compute_confidence_interval(
-        category_results: list[CategoryResult], n_bootstrap: int = 1000, ci: float = 0.95
+        category_results: list[CategoryResult], n_bootstrap: int = 1000, ci: float = 0.95, seed: int = 42,
     ) -> dict:
         """
         Bootstrap confidence intervals by resampling per-question outcomes.
+
+        Seeded for determinism — same inputs always produce same CI.
 
         Returns {score, ci_lower, ci_upper, margin} for the FORGE score
         and per-category scores.
         """
         import random as _random
-        import math
+
+        _random.seed(seed)
 
         all_records = []
         for cr in category_results:

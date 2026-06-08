@@ -34,17 +34,17 @@ def generate_secret_seed() -> int:
 def derive_seed(base_seed: int, difficulty: int, iteration: int) -> int:
     """
     Derive a deterministic seed from base seed, difficulty level, and iteration.
-    
+
     Uses SHA-256 to produce a 256-bit hash, then extracts a 64-bit seed.
-    This makes pre-computation of all possible problems physically impossible:
-    - 2^256 possible hash inputs
-    - Even at 1 trillion hashes/second, would take ~3.7 × 10^51 years to exhaust
-    
+    The hash function maps into a 2^256 space, but the output is truncated
+    to 64 bits for NumPy RNG seeding.  The effective seed space is 2^64
+    (~1.8 × 10^19), which is still far too large to exhaust by brute force.
+
     Args:
         base_seed: The master seed for the evaluation run
         difficulty: Difficulty level (1-5)
         iteration: Question iteration number within the difficulty level
-        
+
     Returns:
         A 64-bit integer suitable for seeding RNGs
     """
@@ -58,20 +58,27 @@ def create_rng(
     base_seed: int,
     difficulty: int,
     iteration: int,
-    seed_python_random: bool = True,
+    seed_python_random: bool = False,
 ) -> np.random.Generator:
     """
     Create a deterministic NumPy RNG for a specific generation context.
-    
-    Optionally seeds Python's random module as well for cases where
-    categories use both numpy and stdlib random.
-    
+
+    The RNG is seeded via SHA-256 derivation of (base_seed, difficulty, iteration),
+    ensuring identical inputs always produce identical outputs.
+
+    NOTE: This function no longer seeds Python's stdlib ``random`` module by
+    default.  Mutating the global ``random`` state is not thread-safe and
+    breaks concurrent problem generation.  All categories should use the
+    returned NumPy RNG (``rng``) for randomness instead of ``random``.
+
     Args:
         base_seed: The master seed for the evaluation run
         difficulty: Difficulty level (1-5)
         iteration: Question iteration number
-        seed_python_random: Whether to also seed random.seed()
-        
+        seed_python_random: Whether to also seed stdlib random.seed().
+            Defaults to False for thread safety.  Set to True only in
+            single-threaded contexts where categories depend on stdlib random.
+
     Returns:
         A seeded numpy.random.Generator
     """

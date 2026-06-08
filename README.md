@@ -98,7 +98,7 @@ FORGE uses a 256-bit hash space (SHA-256). The space of possible problem sets is
 
 | Metric | Value |
 |--------|-------|
-| Possible problem sets | 2^256 ≈ 1.2 × 10^77 |
+| Possible problem sets | 2^64 ≈ 1.8 × 10^19 |
 | Time to exhaust (1 trillion/sec) | ~3.7 × 10^51 years |
 | Atom count in universe | ~10^80 |
 
