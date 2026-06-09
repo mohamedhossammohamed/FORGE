@@ -673,6 +673,9 @@ nav .inner {
 <div class="backend-banner" id="backend-banner">
   <span id="backend-msg"></span>
 </div>
+<div style="background:#FFF8E1;border-bottom:1px solid var(--border);padding:8px 24px;text-align:center;font-size:12px;color:#8B6914;font-family:var(--font-mono)">
+  <strong>Research Phase</strong> — FORGE is not production ready. Scores from [FLAGGED] categories are excluded from the main score. Some categories have known limitations.
+</div>
 <div id="backend-url-input" style="display:none;align-items:center;gap:8px;padding:8px 24px;background:#FFF8E1;border-bottom:1px solid var(--border);font-size:13px">
   <label style="font-weight:500;color:var(--text-secondary)">Backend URL:</label>
   <input type="text" id="backend-url-field" style="font-family:var(--font-mono);font-size:13px;border:1px solid var(--border);padding:4px 8px;flex:1;max-width:320px" placeholder="http://localhost:7860">
@@ -781,6 +784,11 @@ nav .inner {
         <button class="btn-export" data-export="cli">Copy CLI command</button>
         <button class="btn btn-primary btn-sm" id="btn-save-snapshot">Save snapshot</button>
       </div>
+      <p style="font-size:11px;color:var(--text-tertiary);margin-top:calc(var(--unit)*1)">
+        Research disclaimer: FORGE is in active research phase. Scores from [FLAGGED] categories (Polynomial Roots, RSA Arithmetic)
+        are excluded from the main score. Results from [RESEARCH] categories should be interpreted with caution.
+        Current results are preliminary.
+      </p>
     </div>
   </div>
 
@@ -897,6 +905,19 @@ const CAT_DISPLAY = {
   signal_dft:"DFT", geo_polygon:"Polygon Area", graph_shortest_path:"Shortest Path",
   formal_grammars:"Formal Grammars", quantum_amplitudes:"Quantum States", chess_mate:"Chess Mate-in-N",
   algorithmic_trace:"Algorithmic Trace"
+};
+
+const CAT_STATUS = {
+  polynomial_roots: { status: "FLAGGED", color: "#C43E3E", reason: "Problem space 62.8M. Exhaustive contamination feasible" },
+  crypto_rsa: { status: "FLAGGED", color: "#C43E3E", reason: "Tests computational limits, not reasoning" },
+  boolean_kmap: { status: "RESEARCH", color: "#E8A020", reason: "Known grader bug at difficulty 4-5" },
+  chess_mate: { status: "RESEARCH", color: "#E8A020", reason: "Generation pool constraints at high difficulty" },
+  algebra_groups: { status: "RESEARCH", color: "#E8A020", reason: "Extremely slow generation at high difficulty" },
+  quantum_amplitudes: { status: "RESEARCH", color: "#E8A020", reason: "Answer parser fragile on non-standard notation" },
+  info_entropy: { status: "RESEARCH", color: "#E8A020", reason: "Borderline tolerance cases in cross-model testing" },
+  jordan_normal: { status: "RESEARCH", color: "#E8A020", reason: "Degenerate eigenvalue ambiguity at difficulty 5" },
+  formal_grammars: { status: "RESEARCH", color: "#E8A020", reason: "String matching edge cases in grading" },
+  algorithmic_trace: { status: "RESEARCH", color: "#E8A020", reason: "Output formatting edge cases in grading" },
 };
 
 const MODEL_COLORS = ["#0A1628","#E8A020","#2D8A4E","#C43E3E","#5B6ABF","#8B5CF6"];
@@ -1253,7 +1274,11 @@ function showResults(result) {
       const t = cat.tiers?.[d];
       return `<div class="tier-sq ${t && t.correct > 0 ? "pass" : ""}" title="Tier ${d}: ${t ? t.correct + "/" + t.total : "N/A"}"></div>`;
     }).join("");
-    tr.innerHTML = `<td>${CAT_DISPLAY[cat.name] || cat.name}</td><td><div class="tier-squares">${tiers}</div></td><td>${(cat.score * 100).toFixed(0)}%</td><td>${cat.correct}/${cat.total}</td>`;
+    const status = CAT_STATUS[cat.name];
+    const statusHtml = status
+      ? ` <span style="font-size:10px;color:${status.color};font-weight:500" title="${status.reason}">[${status.status}]</span>`
+      : ` <span style="font-size:10px;color:var(--success);font-weight:500">[CERTIFIED]</span>`;
+    tr.innerHTML = `<td>${CAT_DISPLAY[cat.name] || cat.name}${statusHtml}</td><td><div class="tier-squares">${tiers}</div></td><td>${(cat.score * 100).toFixed(0)}%</td><td>${cat.correct}/${cat.total}</td>`;
     tbody.appendChild(tr);
   });
 

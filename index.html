@@ -9,14 +9,14 @@
 <meta name="twitter:site" content="@MohamedHz72007">
 <meta name="twitter:creator" content="@MohamedHz72007">
 <meta name="twitter:title" content="FORGE — Formally Generated Reasoning Evaluation">
-<meta name="twitter:description" content="A procedurally generated benchmark for investigating whether LLMs generalize or interpolate. Open source, computationally graded, seed-reproducible.">
+<meta name="twitter:description" content="A procedurally generated benchmark for investigating whether LLMs generalize or interpolate. Open source, computationally graded, seed-reproducible. Active research phase.">
 <meta name="twitter:image" content="https://mohamedhossammohamed.github.io/FORGE/assets/og-card.png">
 <meta name="twitter:image:alt" content="FORGE — An open question about LLM evaluation.">
 
 <!-- Open Graph -->
 <meta property="og:type" content="website">
 <meta property="og:title" content="FORGE — Formally Generated Reasoning Evaluation">
-<meta property="og:description" content="A procedurally generated benchmark for investigating whether LLMs generalize or interpolate. Open source, computationally graded, seed-reproducible.">
+<meta property="og:description" content="A procedurally generated benchmark for investigating whether LLMs generalize or interpolate. Open source, computationally graded, seed-reproducible. Active research phase.">
 <meta property="og:image" content="https://mohamedhossammohamed.github.io/FORGE/assets/og-card.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
@@ -513,6 +513,7 @@ footer a:hover { color: var(--ink); }
       <li><a href="#hypothesis">Hypothesis</a></li>
       <li><a href="#how-it-works">How it works</a></li>
       <li><a href="#scoring">Scoring</a></li>
+      <li><a href="#category-status">Status</a></li>
       <li><a href="#nerfed-model">Audit trail</a></li>
       <li><a href="#get-started">Get started</a></li>
       <li><a href="researcher.html">Run</a></li>
@@ -520,14 +521,20 @@ footer a:hover { color: var(--ink); }
   </div>
 </nav>
 
+<!-- ─── Research Banner ─── -->
+<div style="background:#FFF8E1;border-bottom:1px solid #E8A020;padding:12px 24px;text-align:center;font-family:var(--font-mono);font-size:13px;color:#8B6914">
+  <strong>Active Research Phase</strong> — FORGE is not production ready. Current results are preliminary.
+  Some categories have known limitations. See <a href="#category-status" style="color:#8B6914;text-decoration:underline">Category Status</a>.
+</div>
+
 <!-- ─── Hero ─── -->
 <header class="hero page reveal">
-  <div class="hero-label">Open-source · MIT License · Work in progress</div>
+  <div class="hero-label">Open-source · MIT License · Active research phase</div>
   <h1>When a model solves a problem<br>it has never seen, is that<br>understanding — or a very good guess?</h1>
   <p class="hero-sub">
-    FORGE is built to find out. It generates every problem at runtime from a seed,
-    grades answers computationally, and produces a reproducible score that anyone
-    can verify or challenge.
+    FORGE is built to investigate this question. It generates every problem at runtime
+    from a seed, grades answers computationally, and produces a reproducible score that
+    anyone can verify or challenge. Current results should be treated as preliminary.
   </p>
   <div class="hero-actions">
     <a href="researcher.html" class="btn btn-primary">Run FORGE</a>
@@ -585,8 +592,9 @@ footer a:hover { color: var(--ink); }
   <p>
     FORGE generates every problem procedurally from a seed using SHA-256 derived RNGs.
     No static question bank. Same seed produces identical problems every time, on any
-    machine. Verbatim contamination of generated questions is statistically near-impossible;
-    structural similarity to training data cannot be excluded.
+    machine. FORGE uses procedural generation to make verbatim contamination statistically
+    unlikely at normal evaluation scales. Individual category problem spaces vary
+    significantly in size. Structural similarity to training data cannot be excluded.
   </p>
 
   <div class="metric-row">
@@ -603,40 +611,46 @@ footer a:hover { color: var(--ink); }
   <h3>Category registry</h3>
 
   <div class="cat-grid">
-    <div class="cat-item"><span class="cat-num">01</span>Arithmetic Chain</div>
-    <div class="cat-item"><span class="cat-num">02</span>Polynomial Roots</div>
-    <div class="cat-item"><span class="cat-num">03</span>Matrix Determinants</div>
-    <div class="cat-item"><span class="cat-num">04</span>Jordan Normal Form</div>
-    <div class="cat-item"><span class="cat-num">05</span>RLC Circuits</div>
-    <div class="cat-item"><span class="cat-num">06</span>Boolean Minimization</div>
-    <div class="cat-item"><span class="cat-num">07</span>Chess Mate-in-N</div>
-    <div class="cat-item"><span class="cat-num">08</span>Shortest Path</div>
-    <div class="cat-item"><span class="cat-num">09</span>RSA Arithmetic</div>
-    <div class="cat-item"><span class="cat-num">10</span>Stars and Bars</div>
-    <div class="cat-item"><span class="cat-num">11</span>Shannon Entropy</div>
-    <div class="cat-item"><span class="cat-num">12</span>DFT</div>
-    <div class="cat-item"><span class="cat-num">13</span>Nim States</div>
-    <div class="cat-item"><span class="cat-num">14</span>Group Orders</div>
-    <div class="cat-item"><span class="cat-num">15</span>Linear Systems</div>
-    <div class="cat-item"><span class="cat-num">16</span>Modular Exponentiation</div>
-    <div class="cat-item"><span class="cat-num">17</span>Vector Divergence</div>
-    <div class="cat-item"><span class="cat-num">18</span>Polygon Area</div>
-    <div class="cat-item"><span class="cat-num">19</span>Financial Math</div>
-    <div class="cat-item"><span class="cat-num">20</span>Bayesian Updating</div>
-    <div class="cat-item"><span class="cat-num">21</span>Taylor Series</div>
-    <div class="cat-item"><span class="cat-num">22</span>Diophantine Equations</div>
-    <div class="cat-item"><span class="cat-num">23</span>Formal Grammars</div>
-    <div class="cat-item"><span class="cat-num">24</span>Quantum States</div>
-    <div class="cat-item"><span class="cat-num">25</span>Algorithmic Trace</div>
+    <div class="cat-item"><span class="cat-num">01</span>Arithmetic Chain <span style="font-size:10px;color:var(--success);font-weight:500">✓ CERTIFIED</span></div>
+    <div class="cat-item" style="border-color:var(--error)"><span class="cat-num">02</span>Polynomial Roots <span style="font-size:10px;color:var(--error);font-weight:500">⚠ FLAGGED</span></div>
+    <div class="cat-item"><span class="cat-num">03</span>Matrix Determinants <span style="font-size:10px;color:var(--success);font-weight:500">✓ CERTIFIED</span></div>
+    <div class="cat-item" style="border-color:var(--amber)"><span class="cat-num">04</span>Jordan Normal Form <span style="font-size:10px;color:var(--amber);font-weight:500">◎ RESEARCH</span></div>
+    <div class="cat-item"><span class="cat-num">05</span>RLC Circuits <span style="font-size:10px;color:var(--success);font-weight:500">✓ CERTIFIED</span></div>
+    <div class="cat-item" style="border-color:var(--amber)"><span class="cat-num">06</span>Boolean Minimization <span style="font-size:10px;color:var(--amber);font-weight:500">◎ RESEARCH</span></div>
+    <div class="cat-item" style="border-color:var(--amber)"><span class="cat-num">07</span>Chess Mate-in-N <span style="font-size:10px;color:var(--amber);font-weight:500">◎ RESEARCH</span></div>
+    <div class="cat-item"><span class="cat-num">08</span>Shortest Path <span style="font-size:10px;color:var(--success);font-weight:500">✓ CERTIFIED</span></div>
+    <div class="cat-item" style="border-color:var(--error)"><span class="cat-num">09</span>RSA Arithmetic <span style="font-size:10px;color:var(--error);font-weight:500">⚠ FLAGGED</span></div>
+    <div class="cat-item"><span class="cat-num">10</span>Stars and Bars <span style="font-size:10px;color:var(--success);font-weight:500">✓ CERTIFIED</span></div>
+    <div class="cat-item" style="border-color:var(--amber)"><span class="cat-num">11</span>Shannon Entropy <span style="font-size:10px;color:var(--amber);font-weight:500">◎ RESEARCH</span></div>
+    <div class="cat-item"><span class="cat-num">12</span>DFT <span style="font-size:10px;color:var(--success);font-weight:500">✓ CERTIFIED</span></div>
+    <div class="cat-item"><span class="cat-num">13</span>Nim States <span style="font-size:10px;color:var(--success);font-weight:500">✓ CERTIFIED</span></div>
+    <div class="cat-item" style="border-color:var(--amber)"><span class="cat-num">14</span>Group Orders <span style="font-size:10px;color:var(--amber);font-weight:500">◎ RESEARCH</span></div>
+    <div class="cat-item"><span class="cat-num">15</span>Linear Systems <span style="font-size:10px;color:var(--success);font-weight:500">✓ CERTIFIED</span></div>
+    <div class="cat-item"><span class="cat-num">16</span>Modular Exponentiation <span style="font-size:10px;color:var(--success);font-weight:500">✓ CERTIFIED</span></div>
+    <div class="cat-item"><span class="cat-num">17</span>Vector Divergence <span style="font-size:10px;color:var(--success);font-weight:500">✓ CERTIFIED</span></div>
+    <div class="cat-item"><span class="cat-num">18</span>Polygon Area <span style="font-size:10px;color:var(--success);font-weight:500">✓ CERTIFIED</span></div>
+    <div class="cat-item"><span class="cat-num">19</span>Financial Math <span style="font-size:10px;color:var(--success);font-weight:500">✓ CERTIFIED</span></div>
+    <div class="cat-item"><span class="cat-num">20</span>Bayesian Updating <span style="font-size:10px;color:var(--success);font-weight:500">✓ CERTIFIED</span></div>
+    <div class="cat-item"><span class="cat-num">21</span>Taylor Series <span style="font-size:10px;color:var(--success);font-weight:500">✓ CERTIFIED</span></div>
+    <div class="cat-item"><span class="cat-num">22</span>Diophantine Equations <span style="font-size:10px;color:var(--success);font-weight:500">✓ CERTIFIED</span></div>
+    <div class="cat-item" style="border-color:var(--amber)"><span class="cat-num">23</span>Formal Grammars <span style="font-size:10px;color:var(--amber);font-weight:500">◎ RESEARCH</span></div>
+    <div class="cat-item" style="border-color:var(--amber)"><span class="cat-num">24</span>Quantum States <span style="font-size:10px;color:var(--amber);font-weight:500">◎ RESEARCH</span></div>
+    <div class="cat-item" style="border-color:var(--amber)"><span class="cat-num">25</span>Algorithmic Trace <span style="font-size:10px;color:var(--amber);font-weight:500">◎ RESEARCH</span></div>
+  </div>
+
+  <div style="font-size:12px;color:var(--text-tertiary);margin-top:calc(var(--unit)*1);margin-bottom:calc(var(--unit)*3)">
+    <span style="color:var(--success)">✓ CERTIFIED</span> = passes all validation criteria &nbsp;·&nbsp;
+    <span style="color:var(--amber)">◎ RESEARCH</span> = known limitations, interpret with caution &nbsp;·&nbsp;
+    <span style="color:var(--error)">⚠ FLAGGED</span> = fundamental issue under investigation, scores excluded
   </div>
 
   <h3>Computational grading</h3>
 
   <p>
     All evaluation uses deterministic computational verification rather than LLM judges.
-    The grading logic is inspectable and consistent — the same input always produces the
-    same grade. It is not perfect: SymPy has edge cases, numeric tolerances are judgment
-    calls, and some categories have known failure modes documented in the README.
+    This eliminates LLM judge bias but introduces its own edge cases, documented per
+    category. The grading logic is inspectable and consistent — the same input always
+    produces the same grade. Known grading limitations are flagged in the category status table.
   </p>
 
   <table class="data-table">
@@ -649,6 +663,41 @@ footer a:hover { color: var(--ink); }
       <tr><td>python-chess</td><td>Game state validation, legal move verification</td></tr>
     </tbody>
   </table>
+</section>
+
+<!-- ─── Category Status ─── -->
+<section id="category-status" class="page reveal">
+  <div class="section-label">Category Status</div>
+  <h2>Which categories are verified, and which are not.</h2>
+
+  <p>
+    Every category is assessed against three criteria: problem space size (too large for
+    feasible exhaustive contamination), grader self-consistency at 100%, and empirically
+    validated difficulty scaling. Categories that fail any criterion are flagged.
+  </p>
+
+  <table class="data-table">
+    <thead>
+      <tr><th>Category</th><th>Status</th><th>Reason</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Polynomial Roots</td><td style="color:var(--error);font-weight:500">FLAGGED</td><td>Problem space of 62.8M. Exhaustive contamination feasible on consumer hardware</td></tr>
+      <tr><td>RSA Arithmetic</td><td style="color:var(--error);font-weight:500">FLAGGED</td><td>Tests computational limits, not reasoning. Under review for redesign</td></tr>
+      <tr><td>Boolean Minimization</td><td style="color:var(--amber);font-weight:500">RESEARCH</td><td>Known grader bug at difficulty 4-5</td></tr>
+      <tr><td>Chess Mate-in-N</td><td style="color:var(--amber);font-weight:500">RESEARCH</td><td>Generation pool constraints at high difficulty</td></tr>
+      <tr><td>Algebra Groups</td><td style="color:var(--amber);font-weight:500">RESEARCH</td><td>Extremely slow generation at high difficulty</td></tr>
+      <tr><td>Quantum Amplitudes</td><td style="color:var(--amber);font-weight:500">RESEARCH</td><td>Answer parser fragile on non-standard notation</td></tr>
+      <tr><td>Shannon Entropy</td><td style="color:var(--amber);font-weight:500">RESEARCH</td><td>Borderline tolerance cases in cross-model testing</td></tr>
+      <tr><td>Jordan Normal Form</td><td style="color:var(--amber);font-weight:500">RESEARCH</td><td>Degenerate eigenvalue ambiguity at difficulty 5</td></tr>
+      <tr><td>Formal Grammars</td><td style="color:var(--amber);font-weight:500">RESEARCH</td><td>String matching edge cases in grading</td></tr>
+      <tr><td>Algorithmic Trace</td><td style="color:var(--amber);font-weight:500">RESEARCH</td><td>Output formatting edge cases in grading</td></tr>
+    </tbody>
+  </table>
+
+  <p style="font-size:12px;color:var(--text-tertiary)">
+    15 categories are [FORGE CERTIFIED]. 8 are [RESEARCH]. 2 are [FLAGGED] (scores excluded from main FORGE score).
+    Full details in the <a href="https://github.com/mohamedhossammohamed/FORGE#category-status">README</a>.
+  </p>
 </section>
 
 <!-- ─── Scoring ─── -->
@@ -738,8 +787,9 @@ footer a:hover { color: var(--ink); }
   <h3>Seed security</h3>
 
   <p>
-    FORGE uses a 256-bit hash space (SHA-256). The space of possible problem sets is large
-    enough that exhaustive pre-computation is not feasible.
+    FORGE accepts seeds with a 256-bit hash space (SHA-256). The number of genuinely
+    distinct questions per category varies. Question set uniqueness at the 25-category
+    level is substantially larger than any individual category space.
   </p>
 
   <table class="data-table">
@@ -747,11 +797,16 @@ footer a:hover { color: var(--ink); }
       <tr><th>Metric</th><th>Value</th></tr>
     </thead>
     <tbody>
-      <tr><td>Hash space</td><td>2<sup>256</sup> ≈ 1.2 × 10<sup>77</sup></td></tr>
+      <tr><td>Seed input space</td><td>2<sup>256</sup> ≈ 1.2 × 10<sup>77</sup></td></tr>
       <tr><td>Time to exhaust (1T hashes/sec)</td><td>~3.7 × 10<sup>51</sup> years</td></tr>
       <tr><td>Age of universe</td><td>1.4 × 10<sup>10</sup> years</td></tr>
     </tbody>
   </table>
+
+  <p style="font-size:12px;color:var(--text-tertiary)">
+    Note: The above describes the <em>seed</em> space. Individual category problem spaces
+    vary significantly. See <a href="#category-status">Category Status</a> for details.
+  </p>
 </section>
 
 <!-- ─── Static benchmarks ─── -->
@@ -769,9 +824,9 @@ footer a:hover { color: var(--ink); }
       <tr><th>Problem</th><th>Design decision</th><th>Tradeoff</th></tr>
     </thead>
     <tbody>
-      <tr><td>Static question banks contaminate pre-training</td><td>Procedural generation from seed at runtime</td><td>Structural similarity to training data cannot be excluded</td></tr>
+      <tr><td>Static question banks contaminate pre-training</td><td>Procedural generation from seed at runtime</td><td>Structural similarity to training data cannot be excluded. Individual category problem spaces vary in size</td></tr>
       <tr><td>Multiple-choice formats are gameable</td><td>Free-form answers graded computationally</td><td>Prompt sensitivity affects scores; format non-compliance penalizes correct answers</td></tr>
-      <tr><td>LLM judges introduce hallucination and inconsistency</td><td>SymPy, NumPy, python-chess for grading</td><td>Computational graders have their own edge cases, documented in the README</td></tr>
+      <tr><td>LLM judges introduce hallucination and inconsistency</td><td>SymPy, NumPy, python-chess for grading</td><td>Eliminates LLM judge bias but introduces grader-specific edge cases, documented per category</td></tr>
       <tr><td>Fixed benchmarks cannot detect model version changes</td><td>Seeded, reproducible runs with published timestamps</td><td>Interpreting score changes requires controlled conditions we do not enforce</td></tr>
       <tr><td>Human-curated hard problems are expensive to scale</td><td>Parametric difficulty via mathematical parameters</td><td>Parametric difficulty may not map cleanly to human difficulty perception</td></tr>
     </tbody>

@@ -1,15 +1,18 @@
 # FORGE: Formally Generated Reasoning Evaluation
 
 <p align="center">
-<strong>Testing Understanding Over Interpolation</strong>
+<strong>An open question about LLM evaluation, built as a tool.</strong>
 </p>
+
+> **⚠ Active Research Phase** — FORGE is not production ready. Current results
+> are preliminary. Some categories have known limitations. See Category Status below.
 
 <p align="center">
 <a href="#the-hypothesis">Hypothesis</a> •
 <a href="#the-nerfed-model-problem">The Nerfed Model Problem</a> •
 <a href="#how-forge-works">How It Works</a> •
-<a href="#quickstart">Quickstart</a> •
-<a href="#leaderboard">Leaderboard</a>
+<a href="#category-status">Category Status</a> •
+<a href="#quickstart">Quickstart</a>
 </p>
 
 ---
@@ -32,27 +35,27 @@ A model is released. It scores well on public benchmarks. The benchmark scores b
 
 There is currently no clean way to detect this. Fixed benchmarks cannot distinguish between "the model got smarter" and "the model was tuned toward this specific benchmark distribution." The question of whether a deployed model today matches the model that produced its published scores is largely unanswerable with existing tools.
 
-**FORGE changes this.**
+**FORGE addresses this.**
 
 Because every FORGE run is governed by a public seed and every question is generated deterministically at runtime, a score is not just a number — it is a **reproducible experimental result**. Any researcher, journalist, or user can rerun seed `42` six months from now against the same model endpoint and compare. If the score has shifted, the shift is real and documented.
 
-This makes FORGE **the first benchmark with a built-in longitudinal audit trail**.
+This makes FORGE a benchmark with a **built-in longitudinal audit trail**. Whether this is the first of its kind is less important than whether it works — which is still under evaluation.
 
-Labs that publish FORGE scores alongside a seed and timestamp are making a verifiable commitment. Labs that avoid doing so are making a different kind of statement. Users and researchers can draw their own conclusions.
+Labs that publish FORGE scores alongside a seed and timestamp are making a verifiable commitment. Users and researchers can draw their own conclusions.
 
-**FORGE does not accuse anyone of nerfing. It simply makes the question answerable for the first time.**
+**FORGE does not accuse anyone of nerfing. It simply makes the question more tractable.**
 
 ---
 
 ## The Problem with Static Benchmarks
 
-| Problem | How FORGE Solves It |
-|---------|---------------------|
-| **Data Contamination** | 100% procedural generation. Zero substring collision with training data. |
-| **Benchmark Saturation** | Parametric difficulty scaling prevents ceiling effects. |
-| **LLM-as-Judge Bias** | Deterministic grading via SymPy, NumPy, python-chess. Zero LLM judges. |
-| **The Complexity Cliff** | FORGE Cliff Index precisely measures where models fail. |
-| **The Nerfed Model Problem** | Seed-based reproducibility creates an audit trail. |
+| Problem | How FORGE Addresses It | Tradeoff |
+|---------|------------------------|----------|
+| **Data Contamination** | Procedural generation from seed at runtime | Structural similarity to training data cannot be excluded. Individual category problem spaces vary in size |
+| **Benchmark Saturation** | Parametric difficulty scaling | Parametric difficulty may not map cleanly to human difficulty perception |
+| **LLM-as-Judge Bias** | Deterministic grading via SymPy, NumPy, python-chess | Eliminates LLM judge bias but introduces grader-specific edge cases, documented per category |
+| **The Complexity Cliff** | Cliff Index measures where models degrade | The cause of the drop is not proven by the metric alone |
+| **The Nerfed Model Problem** | Seed-based reproducibility creates an audit trail | Interpreting score changes requires controlled conditions |
 
 ---
 
@@ -81,9 +84,9 @@ Each category probes a distinct axis of theoretical internal world-models:
 C_c = Σ(α^d · S_{c,d}) / Σ(α^d)    where α = 1.5
 ```
 
-- **Interpolation Score**: Performance on Easy/Medium (likely in training data)
-- **Extrapolation Score**: Performance on Hard/Expert (novel problems)
-- **Cliff Index**: First difficulty tier where accuracy drops >30%
+- **Interpolation Score**: Performance on Easy/Medium tiers (where training data overlap is more likely)
+- **Extrapolation Score**: Performance on Hard/Expert tiers (where training data overlap is less likely)
+- **Cliff Index**: First difficulty tier where accuracy drops >30% (an observation, not a proof of cause)
 
 ### Seed-Based Reproducibility
 
@@ -94,6 +97,26 @@ category = ArithmeticChainCategory(seed=42)
 problem = category.generate(difficulty=3, iteration=0)
 # Always produces the same question, every time, on any machine
 ```
+
+---
+
+## Category Status
+
+| Category | Status | Reason |
+|----------|--------|--------|
+| Polynomial Roots | **FLAGGED** | Problem space 62.8M. Exhaustive contamination feasible |
+| RSA Arithmetic | **FLAGGED** | Tests computational limits, not reasoning |
+| Boolean Minimization | RESEARCH | Known grader bug at difficulty 4-5 |
+| Chess Mate-in-N | RESEARCH | Generation pool constraints at high difficulty |
+| Algebra Groups | RESEARCH | Extremely slow generation at high difficulty |
+| Quantum Amplitudes | RESEARCH | Answer parser fragile on non-standard notation |
+| Shannon Entropy | RESEARCH | Borderline tolerance cases in cross-model testing |
+| Jordan Normal Form | RESEARCH | Degenerate eigenvalue ambiguity at difficulty 5 |
+| Formal Grammars | RESEARCH | String matching edge cases in grading |
+| Algorithmic Trace | RESEARCH | Output formatting edge cases in grading |
+| All others | CERTIFIED | Passes all validation criteria |
+
+Scores from [FLAGGED] categories are excluded from the main FORGE score.
 
 ---
 
@@ -150,16 +173,20 @@ Options:
 
 | Metric | What It Means |
 |--------|---------------|
-| **FORGE Score** | Weighted accuracy emphasizing harder problems. Higher = stronger internal world-model. |
-| **Interpolation Score** | Performance on Easy/Medium. Likely similar to training data. |
-| **Extrapolation Score** | Performance on Hard/Expert. Novel problems not in training data. |
-| **Cliff Index** | First tier where accuracy drops >30%. Lower = earlier capability collapse. |
+| **FORGE Score** | Weighted accuracy emphasizing harder problems. Higher = stronger performance on difficult problems. |
+| **Interpolation Score** | Performance on Easy/Medium tiers. Where training data overlap is more likely. |
+| **Extrapolation Score** | Performance on Hard/Expert tiers. Where training data overlap is less likely. |
+| **Cliff Index** | First tier where accuracy drops >30%. Where performance degrades. |
 
-**Key Insight**: A model with high Interpolation but low Extrapolation is likely memorizing. A model maintaining high scores across both has evidence of generalized reasoning.
+**Key Insight**: A model with high Interpolation but low Extrapolation may be relying on pattern matching. A model maintaining high scores across both tiers is consistent with generalization. Neither interpretation is proven by the score alone.
 
 ---
 
 ## Leaderboard
+
+> **Note:** The leaderboard is in early stages. FORGE is in active research phase.
+> Scores should be treated as preliminary. Categories flagged as [FLAGGED] have their
+> scores excluded from the main FORGE score.
 
 ### How to Submit
 
@@ -173,10 +200,13 @@ Options:
 
 ### Auditability
 
-Every published score is **fully reproducible**:
+Published scores are **reproducible given the same seed and model endpoint**:
 - Same seed → Same questions → Same evaluation
 - Any researcher can verify any published score
-- Score drift over time is detectable and documented
+- Score changes over time are detectable if the same seed and endpoint are used
+
+Note: Individual category problem spaces vary in size. Some categories have not yet achieved
+the uniqueness threshold required for a full anti-contamination guarantee. See Category Status.
 
 ---
 
@@ -194,7 +224,7 @@ Every published score is **fully reproducible**:
 └─────────────────────────────────────────────────────────────┘
 ```
 
-This is not an accusation. It is a **measurement tool**.
+This is not an accusation. It is a **measurement tool**. Whether it works as intended is still under evaluation.
 
 ---
 
@@ -267,5 +297,5 @@ Built by [Mohamed Hossam](https://github.com/mohamedhossammohamed) · [@MohamedH
 
 <p align="center">
 <strong>FORGE does not accuse anyone of anything.<br>
-It simply makes the question answerable for the first time.</strong>
+It tries to make the question more tractable. Current results are preliminary.</strong>
 </p>

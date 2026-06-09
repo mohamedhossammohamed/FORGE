@@ -2,6 +2,13 @@
 
 **An open question about LLM evaluation, built as a tool.**
 
+> **⚠ Current Status: Active Research Phase**
+> FORGE is in active research and development. It is not production ready.
+> Current results should be treated as preliminary. We are working toward
+> v1.0 with full scientific validation of all claims. See
+> [Known Limitations](#known-limitations) and
+> [Roadmap to v1.0](#roadmap-to-v10) below.
+
 ---
 
 ## The Hypothesis
@@ -33,7 +40,7 @@ Existing benchmarks have well-documented structural problems:
 - **LLM-as-judge evaluation**: Open-ended grading introduces its own hallucination and consistency problems
 - **The complexity cliff**: Several papers have documented that model accuracy does not degrade gracefully at the boundary of training distribution — it collapses
 
-FORGE addresses these by generating every problem procedurally at runtime from a seed. Verbatim contamination of generated questions is statistically near-impossible. Structural similarity to training data — problems that resemble the *type* of problem seen during training — cannot be ruled out and is a genuine limitation.
+FORGE addresses these by generating every problem procedurally at runtime from a seed. FORGE uses procedural generation to make verbatim contamination statistically unlikely at normal evaluation scales. Individual category problem spaces vary significantly in size. Categories flagged as [RESEARCH] or [FLAGGED] below have not yet achieved the uniqueness threshold required for a full anti-contamination guarantee. Structural similarity to training data — problems that resemble the *type* of problem seen during training — cannot be ruled out and is a genuine limitation.
 
 ---
 
@@ -90,17 +97,26 @@ Each category tests a distinct axis of theoretical internal world-models:
 All problems are generated from a master seed using SHA-256 derived RNGs:
 - Same seed → identical problems across runs, on any machine
 - Different seeds → statistically distinct problems
-- Verbatim generated questions have near-zero probability of existing in training corpora; structural similarity to training data is a separate concern and cannot be excluded
+- FORGE uses procedural generation to make verbatim contamination statistically unlikely at normal evaluation scales. Individual category problem spaces vary significantly in size. Structural similarity to training data is a separate concern and cannot be excluded
 
 ### Seed Security
 
-FORGE uses a 256-bit hash space (SHA-256). The space of possible problem sets is large enough that exhaustive pre-computation is not feasible:
+FORGE accepts seeds with 2^256 possible input values via SHA-256. The number of genuinely distinct questions per category varies and is documented per category. Question set uniqueness at the 25-category level is substantially larger than any individual category space. Full uniqueness analysis is available at [link to research doc].
 
 | Metric | Value |
 |--------|-------|
-| Possible problem sets | 2^64 ≈ 1.8 × 10^19 |
+| Seed input space | 2^256 ≈ 1.2 × 10^77 |
 | Time to exhaust (1 trillion/sec) | ~3.7 × 10^51 years |
 | Atom count in universe | ~10^80 |
+
+Note: The above table describes the *seed* space. The actual number of distinct questions generated per category is bounded by that category's parameter space, which varies. See [Category Status](#category-status) for per-category assessments.
+
+**Reproducibility note (v0.2.0):** The seed space was increased from 2^64 to 2^256
+in this version. Snapshots and results from v0.1.x (which used 2^64 truncation) are
+not compatible with v0.2.0+ outputs. The previous outputs (5 runs) are not significant
+enough to preserve. Runtime reproducibility is verified by `verify_reproducibility()` —
+if two independent generations with the same seed produce identical output, the result
+is flagged as reproducible.
 
 **Best practices:**
 - **For public benchmarks**: Use a random seed and publish it with your results
@@ -111,12 +127,12 @@ If a lab knows your seed, they can pre-compute all problems. Keep seeds private 
 
 ### Computational Grading
 
-All evaluation uses deterministic computational verification rather than LLM judges:
+FORGE uses deterministic computational verification rather than LLM judges:
 - **SymPy**: Symbolic equivalence for expressions, equations, and calculus
 - **NumPy**: Matrix operations and numerical precision
 - **python-chess**: Game state validation and legal move verification
 
-This grading approach is computationally deterministic — the same input always produces the same grade, and the grading logic is inspectable. It is not perfect. SymPy has known edge cases with certain symbolic forms. Numeric tolerances are judgment calls. These limitations are documented in the Limitations section below.
+This grading approach eliminates LLM judge bias but introduces its own edge cases, documented per category. Known grading limitations are flagged in the [Category Status](#category-status) table below. The same input always produces the same grade, and the grading logic is inspectable.
 
 ### Scoring
 
@@ -165,6 +181,57 @@ Quick mode results on cheap models are not meaningful tests of the hypothesis. T
 - Structural similarity between generated problems and training data. Procedural generation prevents verbatim contamination; it does not prevent a model from having seen many similar problems during training.
 - Prompt sensitivity. The system prompt instructs models to output answers in a specific format. Models that do not follow this format will score lower regardless of whether they computed the correct answer.
 - Reasoning token costs. Models that use extended thinking consume significantly more tokens per problem. Cost estimates in the UI are approximate.
+
+---
+
+## Known Limitations
+
+These are active, specific issues documented with evidence. They are not hypothetical.
+
+**Polynomial Roots (category 2) — [FLAGGED]:** Problem space of 62.8 million with collision threshold of 7,930. Exhaustive contamination is feasible in hours on consumer hardware. A motivated party could pre-compute all questions for a given seed. Parameter expansion is required before this category can be certified.
+
+**RSA Arithmetic (category 9) — [FLAGGED]:** Involves large prime operations (modular exponentiation with large moduli) that language models are not designed to perform mentally. This category may test computational token-generation limits rather than reasoning depth, which is inconsistent with the FORGE hypothesis. Under review for redesign or removal.
+
+**Boolean Minimization (category 6) — [RESEARCH]:** Known grader bug at difficulty 4-5. SymPy's `simplify_logic` raises TypeError on certain complex Boolean expressions. Fix in progress.
+
+**Chess Mate-in-N (category 7) — [RESEARCH]:** Generation pool constraints limit true procedural uniqueness at high difficulty levels. The minimax search without alpha-beta pruning is slow for mate-in-4 and mate-in-5. Rewrite in progress.
+
+**Algebra Groups (category 14) — [RESEARCH]:** Extremely slow generation at high difficulty. Skipped in performance tests. Optimization required before this category can run at scale.
+
+**Quantum Amplitudes (category 24) — [RESEARCH]:** Answer parser is fragile on non-standard notation. Grading reliability not fully verified across diverse model output formats.
+
+**Shannon Entropy (category 11) — [RESEARCH]:** Cross-model testing revealed borderline tolerance cases where models producing correct values within rounding error were graded incorrectly. Tolerance thresholds are under review.
+
+**Jordan Normal Form (category 4) — [RESEARCH]:** At difficulty 5, generated matrices occasionally have degenerate eigenvalue structures that make the problem ambiguous. The grader handles common cases but may miss valid alternative forms.
+
+---
+
+## Roadmap to v1.0
+
+Before FORGE reaches v1.0 with full scientific validation, the following must be completed:
+
+### Category Certification Roadmap
+
+| Category | Current | Required for CERTIFIED | Status |
+|----------|---------|----------------------|--------|
+| Polynomial Roots | [FLAGGED] | Expand parameter space beyond 62.8M unique problems | In progress — parameter expansion design |
+| RSA Arithmetic | [FLAGGED] | Redesign to test reasoning, not computation, or remove | Under review |
+| Boolean Minimization | [RESEARCH] | Fix SymPy simplify_logic TypeError at diff 4-5 | Fix in progress |
+| Chess Mate-in-N | [RESEARCH] | Rewrite with alpha-beta pruning, verify uniqueness at high difficulty | Rewrite in progress |
+| Algebra Groups | [RESEARCH] | Optimize generation speed for high difficulty | Not started |
+| Quantum Amplitudes | [RESEARCH] | Expand answer parser, verify grading across output formats | In progress |
+| Shannon Entropy | [RESEARCH] | Review tolerance thresholds, document edge cases | Under review |
+| Jordan Normal Form | [RESEARCH] | Handle degenerate eigenvalue ambiguity at difficulty 5 | Not started |
+| Formal Grammars | [RESEARCH] | Fix whitespace/formatting edge cases in grading | Not started |
+| Algorithmic Trace | [RESEARCH] | Fix whitespace/formatting edge cases in grading | Not started |
+
+### Infrastructure Roadmap
+
+- [ ] Full uniqueness analysis document with per-category problem space measurements
+- [ ] Grader self-consistency verification at 100% for all [RESEARCH] categories
+- [ ] Difficulty scaling empirical validation (not just proxy measurement)
+- [ ] Cross-seed contamination analysis
+- [ ] Publication-grade statistical methodology documentation
 
 ---
 
@@ -269,6 +336,46 @@ The researcher tool provides real-time progress, per-category breakdown, cliff i
 | **Cliff Index** | First tier where accuracy drops >30% | The cause of the drop |
 
 A model with high interpolation and low extrapolation scores is consistent with retrieval-dominant behavior. A model that maintains accuracy across tiers is consistent with generalization. Neither interpretation is proven by the score alone.
+
+---
+
+## Category Status
+
+Every category is assigned a status flag based on current research findings:
+
+- **[FORGE CERTIFIED]** — Problem space too large for feasible exhaustive contamination, grader self-consistency verified at 100%, difficulty scaling empirically validated, no known generation edge cases
+- **[RESEARCH]** — Included but has known limitations: problem space may be feasible to exhaust, grading has known edge cases, or difficulty scaling is proxy-measured not empirically validated
+- **[FLAGGED]** — Fundamental issue under investigation: problem space is demonstrably exhaustible, grading produces known false positives/negatives, or questions may plausibly exist in training data. Scores excluded from main FORGE score until resolved
+
+| # | Category | Status | Notes |
+|---|----------|--------|-------|
+| 1 | Arithmetic Chain Composition | [FORGE CERTIFIED] | Large parameter space, verified grader |
+| 2 | Polynomial Root Finding | **[FLAGGED]** | Problem space of 62.8M with collision threshold of 7,930. Exhaustive contamination feasible in hours on consumer hardware. Parameter expansion required before certification |
+| 3 | Matrix Determinants | [FORGE CERTIFIED] | Large continuous parameter space |
+| 4 | Jordan Normal Form | [RESEARCH] | Degenerate eigenvalue ambiguity at difficulty 5 |
+| 5 | RLC Circuit Differential Equations | [FORGE CERTIFIED] | Continuous parameter space |
+| 6 | Boolean Logic Minimization | **[RESEARCH]** | Known grader bug at difficulty 4-5. SymPy simplify_logic TypeError on complex expressions. Fix in progress |
+| 7 | Chess Mate-in-N | **[RESEARCH]** | Generation pool constraints limit true procedural uniqueness at high difficulty. Rewrite in progress |
+| 8 | Graph Theory: Shortest Path | [FORGE CERTIFIED] | Large graph parameter space |
+| 9 | Cryptographic Arithmetic (RSA) | **[FLAGGED]** | Involves large prime operations models are not designed to perform mentally. May test computational limits rather than reasoning depth. Inconsistent with FORGE hypothesis. Under review for redesign or removal |
+| 10 | Combinatorics: Stars and Bars | [FORGE CERTIFIED] | Large parameter space |
+| 11 | Information Theory: Entropy | [RESEARCH] | Borderline tolerance cases observed in cross-model testing. See Observed Behaviors |
+| 12 | Signal Processing: DFT | [FORGE CERTIFIED] | Continuous parameter space |
+| 13 | Game Theory: Nim States | [FORGE CERTIFIED] | Large state space |
+| 14 | Abstract Algebra: Group Orders | **[RESEARCH]** | Extremely slow generation at high difficulty. Skipped in performance tests. Optimization required |
+| 15 | Systems of Linear Equations | [FORGE CERTIFIED] | Large continuous parameter space |
+| 16 | Modular Exponentiation | [FORGE CERTIFIED] | Large parameter space |
+| 17 | Vector Calculus: Divergence | [FORGE CERTIFIED] | Continuous parameter space |
+| 18 | Geometry: Polygon Properties | [FORGE CERTIFIED] | Large continuous parameter space |
+| 19 | Financial Mathematics | [FORGE CERTIFIED] | Large parameter space |
+| 20 | Probability: Bayesian Updating | [FORGE CERTIFIED] | Large parameter space |
+| 21 | Taylor Series Coefficients | [FORGE CERTIFIED] | Large parameter space |
+| 22 | Diophantine Equations | [FORGE CERTIFIED] | Large parameter space |
+| 23 | Formal Grammars | [RESEARCH] | String matching edge cases in grading |
+| 24 | Quantum State Amplitudes | **[RESEARCH]** | Answer parser fragile on non-standard notation. Grading reliability not fully verified |
+| 25 | Algorithmic Trace Execution | [RESEARCH] | Output formatting edge cases in grading |
+
+Scores from [FLAGGED] categories are excluded from the main FORGE score until the issue is resolved. Results from [RESEARCH] categories should be interpreted with caution.
 
 ---
 
